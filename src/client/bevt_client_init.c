@@ -58,7 +58,7 @@ int bevt_client_init(void) {
             strerr_diefu1sys(111, "trap signals") ;
     }
 
-    fprintf(stderr, "%s: rid(%lld)\n", __PRETTY_FUNCTION__, (long long int)bevt_client_g.rid);
+    BEVT_DEBUG_LOG_INFO("rid(%lld)", (long long int)bevt_client_g.rid);
     if(bevt_client_start_relay(0)<0)
         return -1;
 

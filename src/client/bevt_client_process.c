@@ -41,7 +41,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "skalibs/iopause.h"
 #include "skalibs/strerr2.h"
 
-#include "bevt_debug_p.h"
 #include "bevt_client_p.h"
 
 //*****************************************************************************

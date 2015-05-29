@@ -31,8 +31,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <errno.h>
 
 #include <skalibs/strerr2.h>
@@ -71,8 +69,8 @@ int bevt_client_start_relay(int b) {
 void bevt_client_handle_signals (void) {
     int wstat;
 
-    fprintf(stderr, "%s: signal arrive\n", __PRETTY_FUNCTION__);
     for (;;) {
+        BEVT_DEBUG_LOG_INFO("signal arrives");
         switch (selfpipe_read()) {
             case -1 : strerr_diefu1sys(111, "selfpipe_read") ;
             case 0 : return ;
@@ -82,10 +80,10 @@ void bevt_client_handle_signals (void) {
                 if(r==bevt_client_g.connection.pid) {
                     skaclient_end(&bevt_client_g.connection);
                     if(bevt_client_start_relay(1)<0)
-                        fprintf(stderr, "%s: failed restart relay\n", __PRETTY_FUNCTION__);
+                        BEVT_DEBUG_LOG_ERROR("failed restart relay");
                 }
                 else {
-                    fprintf(stderr, "%s: pid differs (expected:%d, compared:%d)\n", __PRETTY_FUNCTION__, bevt_client_g.connection.pid, r);
+                    BEVT_DEBUG_LOG_ERROR("pid differs (expected:%d, compared:%d)", bevt_client_g.connection.pid, r);
                 }
             }
             return;

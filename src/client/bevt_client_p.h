@@ -50,6 +50,7 @@ extern "C"
 #include <skalibs/skaclient.h>
 #include <skalibs/buffer.h>
 
+#include "bevt_debug_p.h"
 #include "bozEvent/bevt_client.h"
 
 #define BEVT_RELAY_PROG BEVT_PROG_PREFIX "bevt_relayd"
