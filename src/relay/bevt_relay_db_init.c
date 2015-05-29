@@ -22,46 +22,36 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 /*!
- * \file        bevt_relay_p.h
- * \brief       Message Management private APIs.
- * \version     0.1
+ * \file        bevt_relayd.c
+ * \brief       BozEvent relay client executable.
+ * \version     0.1.0
  * \date        2013/01/14
  * \author      Vincent de RIBOU.
  * \copyright   Aquaplouf Land.
  *
+ * \brief Implements client relay to central node.
+ *
  */
 
-#ifndef _BEVT_RELAY_PRIV_H_
-#define _BEVT_RELAY_PRIV_H_
+#include <unistd.h>
+#include <errno.h>
+#include <stdio.h>
 
-/**
- * \ingroup BOZCORE_PRIV
- * \defgroup BOZCONNECT_PRIV Message Management private APIs.
- * \{
- */
+#include <skalibs/environ.h>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include "bevt_relay_p.h"
 
-#include "bevt_debug_p.h"
+int bevt_relay_db_init(char const *db_name) {
+    int count = 0;
 
-#define BEVT_RELAY_PROG BEVT_PROG_PREFIX "bevt_relayd"
-#define BEVT_RELAY_BANNER1 "bevtrelay v1.0 (b)\n"
-#define BEVT_RELAY_BANNER1_LEN (sizeof BEVT_RELAY_BANNER1 - 1)
-#define BEVT_RELAY_BANNER2 "bevtrelay v1.0 (a)\n"
-#define BEVT_RELAY_BANNER2_LEN (sizeof BEVT_RELAY_BANNER2 - 1)
+    fprintf(stderr, "\n");
+    while(environ[count] != NULL)
+    {
+        fprintf(stderr, "[%s] :: ", environ[count]);
+        count++;
+    }
 
-extern int bevt_relay_db_init(char const *db_name);
-  
-/**
- *\}
- * End of group
- */
 
-#ifdef __cplusplus
+    BEVT_DEBUG_LOG_INFO("db init on (%s)", db_name);
+    return (errno=0, 0);
 }
-#endif
-
-#endif   // _BEVT_RELAY_PRIV_H_ 

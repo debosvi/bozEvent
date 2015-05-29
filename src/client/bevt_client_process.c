@@ -22,7 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 /*!
- * \file        bevt_client_init.c
+ * \file        bevt_client_process.c
  * \brief       Message creation implementation.
  * \version     0.1
  * \date        2013/01/14
@@ -49,7 +49,7 @@ int bevt_client_process(const int to_ms) {
     tain_t deadline, tto;
 
     for (;;) {
-        iopause_fd x[1] ;
+        iopause_fd x[3] ;
         int r ;
 
         tain_now_g();
@@ -58,6 +58,8 @@ int bevt_client_process(const int to_ms) {
         tain_add_g(&deadline, &tto);
 
         x[0].fd = bevt_client_g.sfd ; x[0].events = IOPAUSE_READ ;
+        x[1].fd = skaclient_sfd(&bevt_client_g.connection) ; x[1].events = IOPAUSE_READ ;
+        x[2].fd = skaclient_afd(&bevt_client_g.connection) ; x[1].events = IOPAUSE_READ ;
 
         r = iopause_g(x, 1, &deadline) ;
         if (r < 0) {
@@ -73,6 +75,16 @@ int bevt_client_process(const int to_ms) {
         /* signals arrived */
         if (x[0].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) {
             bevt_client_handle_signals() ;
+            break;
+        }
+
+        /* syncin arrived */
+        if (x[1].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) {
+            break;
+        }
+
+        /* asyncin arrived */
+        if (x[2].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) {
             break;
         }
 

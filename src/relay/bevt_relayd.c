@@ -97,6 +97,9 @@ int main (int argc, char const *const *argv) {
             strerr_diefu1sys(111, "trap signals") ;
     }
 
+    if(bevt_relay_db_init(argv[1])<0)
+        strerr_diefu1sys(111, "db init failed") ;
+
     tain_now_g() ;
     tain_addsec_g(&deadline, 2) ;
 
