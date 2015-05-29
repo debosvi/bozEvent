@@ -30,3 +30,7 @@
 
 # Debug files
 *.dSYM/
+
+# custom ignore
+build/
+.cmakebuilt

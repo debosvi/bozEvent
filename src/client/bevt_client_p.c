@@ -33,6 +33,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+
+#include <skalibs/strerr2.h>
+#include <skalibs/djbunix.h>
+#include <skalibs/selfpipe.h>
+#include "skalibs/environ.h"
 
 #include "bevt_client_p.h"
 
@@ -40,4 +46,51 @@ bevt_client_glob_t bevt_client_g = BEVT_CLIENT_GLOB_ZERO;
 
 //*****************************************************************************
 //*****************************************************************************
+int bevt_client_start_relay(int b) {
+    char rid_str[UINT64_FMT];
+    char const *cargv[3] = { BEVT_RELAY_PROG, &rid_str[0], 0 } ;
+    tain_t deadline;
 
+    tain_now_g();
+    tain_addsec_g(&deadline, 1);
+    uint64_fmt(rid_str, bevt_client_g.rid);
+
+    skaclient_startf_b_g(&bevt_client_g.connection, &bevt_client_g.buffers,
+        cargv[0], cargv, (char const *const *)environ,
+        SKACLIENT_OPTION_WAITPID,
+        BEVT_RELAY_BANNER1, BEVT_RELAY_BANNER1_LEN,
+        BEVT_RELAY_BANNER2, BEVT_RELAY_BANNER2_LEN,
+        &deadline);
+
+    return (errno=0,0);
+}
+
+
+//*****************************************************************************
+//*****************************************************************************
+void bevt_client_handle_signals (void) {
+    int wstat;
+
+    fprintf(stderr, "%s: signal arrive\n", __PRETTY_FUNCTION__);
+    for (;;) {
+        switch (selfpipe_read()) {
+            case -1 : strerr_diefu1sys(111, "selfpipe_read") ;
+            case 0 : return ;
+            case SIGCHLD :
+            {
+                int r=wait_pid(bevt_client_g.connection.pid, &wstat);
+                if(r==bevt_client_g.connection.pid) {
+                    skaclient_end(&bevt_client_g.connection);
+                    if(bevt_client_start_relay(1)<0)
+                        fprintf(stderr, "%s: failed restart relay\n", __PRETTY_FUNCTION__);
+                }
+                else {
+                    fprintf(stderr, "%s: pid differs (expected:%d, compared:%d)\n", __PRETTY_FUNCTION__, bevt_client_g.connection.pid, r);
+                }
+            }
+            return;
+
+            default: break; 
+        }
+    }
+}

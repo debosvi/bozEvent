@@ -45,6 +45,8 @@ extern "C"
 {
 #endif
 
+#include <pthread.h>
+
 #include <skalibs/skaclient.h>
 #include <skalibs/buffer.h>
 
@@ -60,7 +62,8 @@ extern "C"
  * @brief Messsage global type.
  */
 typedef struct {
-    uint64_t    rid;      /*!< Random identifier */
+    uint64_t    rid;        /*!< Random identifier */
+    int         sfd;        /*!< signal fd */
     skaclient_t connection ;
     skaclient_buffer_t buffers ;
 } bevt_client_glob_t;
@@ -70,6 +73,7 @@ typedef struct {
  */
 #define BEVT_CLIENT_GLOB_ZERO {     \
     .rid=0,                         \
+    .sfd=-1,                        \
     .connection = SKACLIENT_ZERO,   \
 }
 
@@ -77,6 +81,13 @@ typedef struct {
  * @brief Messsage global type instance.
  */
 extern bevt_client_glob_t bevt_client_g;
+
+extern int bevt_client_start_relay(int b);
+
+/**
+ * @brief Messsage global type instance.
+ */
+extern void bevt_client_handle_signals (void);
 
 /**
  *\}

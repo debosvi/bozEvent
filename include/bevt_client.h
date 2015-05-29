@@ -75,6 +75,15 @@ int bevt_client_init(void);
 int bevt_client_finalise(void);
 
 /**
+ * @brief Process bozEvent client endpoint.
+ * @return      error code.
+ * @retval      0 in case of success.
+ * @retval      -1 in case of failure, errno set accordingly.
+ */ 
+int bevt_client_process(const int to_ms);
+
+
+/**
  *\}
  * End of group
  */

@@ -8,13 +8,15 @@
 #include "bozEvent/bevt_client.h"
 
 int main(int ac, char **av) {
-    int ret=0;
+    int ret=0, i=0;
 
     ret=bevt_client_init();
     if(ret)
         fprintf(stderr, "bevt_client_init failed, errno(%d/%s)\n", errno, strerror(errno));
 
-    poll(NULL, 0, 50000);
+    while(i++<(10*60)) {
+        bevt_client_process(100);
+    };
 
     ret=bevt_client_finalise();
     if(ret)

@@ -36,31 +36,48 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdlib.h>
 
 #include "skalibs/random.h"
+#include "skalibs/environ.h"
 #include "skalibs/selfpipe.h"
+#include "skalibs/iopause.h"
 #include "skalibs/strerr2.h"
 
 #include "bevt_client_p.h"
 
 //*****************************************************************************
 //*****************************************************************************
-int bevt_client_init(void) {
-    badrandom_init() ;
-    bevt_client_g.rid = badrandom_int(INT32_MAX);
-    badrandom_finish() ;
+int bevt_client_process(const int to_ms) {
+    tain_t deadline, tto;
 
-    bevt_client_g.sfd = selfpipe_init() ;
-    if (bevt_client_g.sfd < 0) strerr_diefu1sys(111, "selfpipe_init") ;
-    {
-        sigset_t set ;
-        sigemptyset(&set) ;
-        sigaddset(&set, SIGCHLD) ;
-        if (selfpipe_trapset(&set) < 0)
-            strerr_diefu1sys(111, "trap signals") ;
+    for (;;) {
+        iopause_fd x[1] ;
+        int r ;
+
+        tain_now_g();
+        tain_copynow(&deadline);
+        tain_from_millisecs (&tto, to_ms); 
+        tain_add_g(&deadline, &tto);
+
+        x[0].fd = bevt_client_g.sfd ; x[0].events = IOPAUSE_READ ;
+
+        r = iopause_g(x, 1, &deadline) ;
+        if (r < 0) {
+            fprintf(stderr, "%s: iopause failed\n", __PRETTY_FUNCTION__);
+            return -1;
+        }
+    
+        if(!r) {
+            fprintf(stderr, "%s: nothing to do\n", __PRETTY_FUNCTION__);
+            break;
+        }
+
+        /* signals arrived */
+        if (x[0].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) {
+            bevt_client_handle_signals() ;
+            break;
+        }
+
+
     }
-
-    fprintf(stderr, "%s: rid(%lld)\n", __PRETTY_FUNCTION__, (long long int)bevt_client_g.rid);
-    if(bevt_client_start_relay(0)<0)
-        return -1;
 
     return (errno=0,0);
 }
