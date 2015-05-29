@@ -22,8 +22,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 /*!
- * \file        bevt_client_init.c
- * \brief       Message creation implementation.
+ * \file        bevt_client_p.c
+ * \brief       Message Management private APIs.
  * \version     0.1
  * \date        2013/01/14
  * \author      Vincent de RIBOU.
@@ -31,55 +31,41 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
 
-#include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
-
-#include "skalibs/random.h"
-#include "skalibs/environ.h"
-#include "skalibs/selfpipe.h"
-#include "skalibs/iopause.h"
-#include "skalibs/strerr2.h"
 
 #include "bevt_debug_p.h"
-#include "bevt_client_p.h"
+
+#define BEVT_DEBUG_BUFFER_SIZE  (256)
+static char bevt_debug_buffer[BEVT_DEBUG_BUFFER_SIZE];
 
 //*****************************************************************************
 //*****************************************************************************
-int bevt_client_process(const int to_ms) {
-    tain_t deadline, tto;
-
-    for (;;) {
-        iopause_fd x[1] ;
-        int r ;
-
-        tain_now_g();
-        tain_copynow(&deadline);
-        tain_from_millisecs (&tto, to_ms); 
-        tain_add_g(&deadline, &tto);
-
-        x[0].fd = bevt_client_g.sfd ; x[0].events = IOPAUSE_READ ;
-
-        r = iopause_g(x, 1, &deadline) ;
-        if (r < 0) {
-            BEVT_DEBUG_LOG_ERROR("iopause failed");
-            return -1;
-        }
+int bevt_debug_log(const bevt_debug_type_t type, const char* fname, const char* restrict fmt, ...) {
+    va_list ap;
     
-        if(!r) {
-            BEVT_DEBUG_LOG_INFO("nothing to do");
+    va_start(ap, fmt);  
+    vsnprintf(&bevt_debug_buffer[0], BEVT_DEBUG_BUFFER_SIZE, fmt, ap);
+    va_end(ap);
+
+    switch(type) {
+
+        case BEVT_DEBUG_INFO: 
+            strerr_warn3x(fname, ": INFO: ", &bevt_debug_buffer[0]);
             break;
-        }
-
-        /* signals arrived */
-        if (x[0].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) {
-            bevt_client_handle_signals() ;
+        case BEVT_DEBUG_WARNING: 
+            strerr_warn3x(fname, ": WARNING: ", &bevt_debug_buffer[0]); 
             break;
-        }
-
-
+        case BEVT_DEBUG_ERROR: 
+            strerr_warn3x(fname, ": ERROR: ", &bevt_debug_buffer[0]);
+            break;
+        case BEVT_DEBUG_CRITICAL: 
+            strerr_warn3x(fname, ": CRITICAL: ", &bevt_debug_buffer[0]); 
+            break;
+        default: break;
     }
 
-    return (errno=0,0);
+    return 0;
 }
+
 

@@ -13,6 +13,7 @@ add_library(${BOZ_EVENT_LIB} STATIC
     )
 
 target_link_libraries(${BOZ_EVENT_LIB}
+    bevt_debug
     skarnet
     )
     
