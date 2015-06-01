@@ -6,6 +6,8 @@ set(SOURCES
     bevt_client_init.c
     bevt_client_finalise.c
     bevt_client_process.c
+    bevt_client_parse_prot_cmd.c
+    bevt_client_parse_prot_event.c
     )
     
 add_library(${BOZ_EVENT_LIB} STATIC

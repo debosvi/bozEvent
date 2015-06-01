@@ -48,7 +48,7 @@ extern "C"
 #include <pthread.h>
 
 #include <skalibs/skaclient.h>
-#include <skalibs/buffer.h>
+#include <skalibs/unixmessage.h>
 
 #include "bevt_debug_p.h"
 #include "bozEvent/bevt_client.h"
@@ -88,7 +88,9 @@ extern int bevt_client_start_relay(int b);
 /**
  * @brief Messsage global type instance.
  */
-extern void bevt_client_handle_signals (void);
+extern void bevt_client_handle_signals(void);
+extern int bevt_client_parse_prot_cmd(unixmessage_t const*, void*);
+extern int bevt_client_parse_prot_event(unixmessage_t const*, void*);
 
 /**
  *\}

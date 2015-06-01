@@ -7,7 +7,7 @@
 
 #include "bozEvent/bevt_client.h"
 
-int main(int ac, char **av) {
+int main(void) {
     int ret=0, i=0;
 
     ret=bevt_client_init();

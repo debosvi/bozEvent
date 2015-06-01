@@ -69,6 +69,18 @@ int bevt_client_process(const int to_ms) {
     
         if(!r) {
             BEVT_DEBUG_LOG_INFO("nothing to do");
+            {
+                char msg[] = "Toto is dead";
+                unixmessage_t m = { .s=msg, .len=12, .fds=0, .nfds=0 };
+
+                if(!unixmessage_put(&bevt_client_g.connection.syncout, &m))
+                    BEVT_DEBUG_LOG_ERROR("unable to put message");
+                else if(!unixmessage_sender_flush(&bevt_client_g.connection.syncout))
+                    BEVT_DEBUG_LOG_ERROR("unable to send message");
+                else 
+                    BEVT_DEBUG_LOG_INFO("msg sent");
+
+            }
             break;
         }
 
@@ -79,7 +91,11 @@ int bevt_client_process(const int to_ms) {
         }
 
         /* syncin arrived */
-        if (x[1].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) {
+        if (!unixmessage_receiver_isempty(&bevt_client_g.connection.syncin) || (x[1].revents & IOPAUSE_READ)) {
+            if (unixmessage_handle(&bevt_client_g.connection.syncin, &bevt_client_parse_prot_cmd, 0) < 0)
+            {
+                BEVT_DEBUG_LOG_ERROR("handle messages from relay") ;
+            }
             break;
         }
 
@@ -87,7 +103,6 @@ int bevt_client_process(const int to_ms) {
         if (x[2].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) {
             break;
         }
-
 
     }
 
