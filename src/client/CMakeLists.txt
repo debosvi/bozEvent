@@ -17,3 +17,4 @@ target_link_libraries(${BOZ_EVENT_LIB}
     skarnet
     )
     
+BOZ_INSTALL_ITEM(${BOZ_EVENT_LIB})

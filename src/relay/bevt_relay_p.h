@@ -45,6 +45,8 @@ extern "C"
 {
 #endif
 
+#include <skalibs/unixmessage.h>
+
 #include "bevt_debug_p.h"
 
 #define BEVT_RELAY_PROG BEVT_PROG_PREFIX "bevt_relayd"
@@ -54,6 +56,8 @@ extern "C"
 #define BEVT_RELAY_BANNER2_LEN (sizeof BEVT_RELAY_BANNER2 - 1)
 
 extern int bevt_relay_db_init(char const *db_name);
+extern int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context);
+extern int bevt_relay_parse_prot_event(unixmessage_t const *m, void *context);
   
 /**
  *\}

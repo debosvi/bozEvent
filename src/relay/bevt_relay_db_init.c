@@ -38,20 +38,24 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 
 #include <skalibs/environ.h>
+#include <skalibs/env.h>
 
 #include "bevt_relay_p.h"
 
 int bevt_relay_db_init(char const *db_name) {
+    char const * restart;
+#if 0
     int count = 0;
-
-    fprintf(stderr, "\n");
-    while(environ[count] != NULL)
-    {
-        fprintf(stderr, "[%s] :: ", environ[count]);
+    while(environ[count] != NULL)  {
+        BEVT_DEBUG_LOG_INFO("[%s] :: ", environ[count]);
         count++;
     }
+#endif
+    restart = env_get("BEVT_RELAY_RESTART");
+    if(!restart)
+        BEVT_DEBUG_LOG_INFO("db init on (%s)", db_name);
+    else
+        BEVT_DEBUG_LOG_INFO("reuse db (%s)", db_name);
 
-
-    BEVT_DEBUG_LOG_INFO("db init on (%s)", db_name);
     return (errno=0, 0);
 }

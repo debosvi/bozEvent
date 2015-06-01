@@ -136,6 +136,16 @@ int main (int argc, char const *const *argv) {
         /* signals arrived */
         if (x[3].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) handle_signals() ;
 
+        /* client is writing */
+        if (!unixmessage_receiver_isempty(unixmessage_receiver_0) || x[0].revents & IOPAUSE_READ)
+        {
+            if (unixmessage_handle(unixmessage_receiver_0, &bevt_relay_parse_prot_cmd, 0) < 0)
+            {
+                if (errno == EPIPE) break ; /* normal exit */
+                cleanup() ;
+                strerr_diefu1sys(111, "handle messages from client") ;
+            }
+        }
 
     }
     cleanup() ;
