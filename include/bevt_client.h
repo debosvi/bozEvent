@@ -49,6 +49,11 @@ extern "C"
 #include <stdint.h>
 
 /**
+ * @brief Maximum data size to be sent as event.
+ */
+#define BEVT_MAX_DATA_SIZE (1024)
+
+/**
  * @brief bozEvent client identifier.
  */
 typedef uint64_t bevt_client_id_t;

@@ -2,6 +2,7 @@
 set(BOZ_RELAY_APP bevt_relayd)
 
 set(SOURCES
+    bevt_relay_main_socket.c
     bevt_relay_db_init.c
     bevt_relay_parse_prot_cmd.c
     bevt_relay_parse_prot_event.c

@@ -34,17 +34,37 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include <errno.h>
+#include <sys/socket.h>
 #include <skalibs/webipc.h>
 
 #include "bevt_central_p.h"
 
-int open_main_socket(void) {
-    register int r=0;
+#define MAIN_SOCKET_PATH "/tmp/bevt_centrals"
 
-    r = ipc_stream();
+int main_socket_open(void) {
+    register int r, fd;
+
+    fd = ipc_stream_nb();
+    if(fd<0) return fd;
+
+    r = ipc_bind(fd, MAIN_SOCKET_PATH);
     if(r<0) return r;
 
+    r = ipc_listen(fd, BEVT_CENTRAL_MAX_CONNS);
+    if(r<0) return r;
 
-    return (errno=0, r);
+    return (errno=0, fd);
 }
 
+int main_socket_close(const int mfd) {
+    if(shutdown(mfd, SHUT_RDWR)<0) return -1;
+    if(fd_close(mfd)<0) return -1;
+    if(rm_rf(MAIN_SOCKET_PATH)<0) return -1;
+    return (errno=0, 0);
+}
+
+int main_socket_accept(const int mfd) {
+    int trunc;
+    return ipc_accept_nb(mfd, 0, 0, &trunc);
+}
+    

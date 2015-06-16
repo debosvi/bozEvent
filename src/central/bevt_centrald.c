@@ -34,30 +34,57 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include <unistd.h>
+#include <stdlib.h>
 #include <errno.h>
-#include <signal.h>
-#include <skalibs/allreadwrite.h>
-#include <skalibs/error.h>
+
 #include <skalibs/strerr2.h>
 #include <skalibs/sig.h>
 #include <skalibs/selfpipe.h>
 #include <skalibs/tai.h>
 #include <skalibs/djbunix.h>
 #include <skalibs/iopause.h>
-#include <skalibs/unixmessage.h>
-#include <skalibs/skaclient.h>
 
 #include "bevt_central_p.h"
 
 #define USAGE "bevt_centrald"
 #define X() strerr_dief1x(101, "internal inconsistency, please submit a bug-report.")
 
-static void cleanup (void) {
+static int mfd=-1;
+static bevt_central_rconns_t relay_conns;
 
+static int handle_close(bevt_central_conn_t *p) {
+    fd_close(bozmessage_receiver_fd(&p->r));
+    bozmessage_receiver_free(&p->r);  
+    bozmessage_sender_free(&p->s);  
+    return (errno=0, 0);
 }
 
-static int handle_accept(int mfd) {
-    return 0;
+static void cleanup (void) {
+    register int i=0, n=gensetb_n(&relay_conns);
+    
+    for(; i<n; i++) {
+        bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i);
+        handle_close(p);
+    }
+
+    main_socket_close(mfd);
+}
+
+static int handle_accept(const int fd) {
+    int r = main_socket_accept(fd);
+    if(r<0) strerr_warnwu1x("unable to accept new connection");
+    else {
+        register int i = gensetb_new(&relay_conns);
+        if(i<0) {
+            close(r);
+            return (errno=ENOMEM, -1);
+        }
+        bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i);
+        char *d = malloc(BEVT_MAX_DATA_SIZE);
+        bozmessage_receiver_init(&p->r, r, d, BEVT_MAX_DATA_SIZE);  
+        bozmessage_sender_init(&p->s, 16*BEVT_MAX_DATA_SIZE);  
+    }
+    return r;
 }
 
 static void handle_signals (void) {
@@ -78,7 +105,7 @@ static void handle_signals (void) {
 
 int main (int argc, char const *const *argv) {
     tain_t deadline ;
-    int sfd, mfd ;
+    int sfd ;
     pid_t child;
     PROG = "bevt_centrald" ;
 
@@ -106,20 +133,30 @@ int main (int argc, char const *const *argv) {
             strerr_diefu1sys(111, "trap signals") ;
     }
 
-    mfd = open_main_socket();
+    GENSETB_init(bevt_central_conn_t, &relay_conns, 10);
+
+    mfd = main_socket_open();
     if (mfd < 0) strerr_diefu1sys(111, "open_main_socket") ;
 
     tain_now_g() ;
     tain_addsec_g(&deadline, 2) ;
 
     for (;;) {
-        register unsigned int n = 0 ;
+        register unsigned int n = gensetb_n(&relay_conns) ;
         iopause_fd x[2 + n] ;
-        int r ;
+        register int r ;
+        unsigned int i=0;
 
         tain_add_g(&deadline, &tain_infinite_relative) ;
         x[0].fd = sfd ; x[0].events = IOPAUSE_READ ;
         x[1].fd = mfd ; x[1].events = IOPAUSE_READ ;
+
+        for(; i<n; i++) {
+            bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i);
+            p->xindex = 2+i;
+            x[2+i].fd = bozmessage_receiver_fd(&p->r);
+            x[2+i].events = IOPAUSE_READ;
+        }
 
         r = iopause_g(x, 2 + n, &deadline) ;
         if (r < 0) {
@@ -133,6 +170,18 @@ int main (int argc, char const *const *argv) {
         /* main socket arrived */
         if (x[1].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) handle_accept(mfd) ;
 
+        for (i=0 ; i<n; i++) {
+            register bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i) ;
+            if (x[p->xindex].revents & IOPAUSE_READ) {
+                bozmessage_t m ;
+                register int rr = sanitize_read(bozmessage_receive(&p->r, &m)) ;
+                if (!rr) continue ;
+                if (rr < 0) {
+                    handle_close(p) ;
+                    gensetb_delete(&relay_conns, i);
+                }
+            }
+        }
 //        /* client is writing */
 //        if (!unixmessage_receiver_isempty(unixmessage_receiver_0) || x[0].revents & IOPAUSE_READ)
 //        {

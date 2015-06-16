@@ -59,6 +59,9 @@ extern int bevt_relay_db_init(char const *db_name);
 extern int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context);
 extern int bevt_relay_parse_prot_event(unixmessage_t const *m, void *context);
   
+int main_socket_open(void);
+int main_socket_close(const int);
+
 /**
  *\}
  * End of group

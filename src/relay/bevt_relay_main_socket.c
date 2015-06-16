@@ -22,57 +22,41 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 /*!
- * \file        bevt_central_p.h
- * \brief       Message Management private APIs.
- * \version     0.1
+ * \file        bevt_relay_main_socket.c
+ * \brief       BozEvent relay client executable.
+ * \version     0.1.0
  * \date        2013/01/14
  * \author      Vincent de RIBOU.
  * \copyright   Aquaplouf Land.
  *
+ * \brief Implements client relay to central node.
+ *
  */
 
-#ifndef _BEVT_CENTRAL_PRIV_H_
-#define _BEVT_CENTRAL_PRIV_H_
+#include <errno.h>
+#include <sys/socket.h>
+#include <skalibs/webipc.h>
 
-/**
- * \ingroup BOZCORE_PRIV
- * \defgroup BOZCONNECT_PRIV Message Management private APIs.
- * \{
- */
+#include "bevt_relay_p.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#define MAIN_SOCKET_PATH "/tmp/bevt_centrals"
 
-#include <skalibs/unixmessage.h>
-#include <skalibs/genset.h>
+int main_socket_open(void) {
+    register int r, fd;
 
-#include <bozCore/bozmessage.h>
+    fd = ipc_stream_nb();
+    if(fd<0) return fd;
 
-#include <bozEvent/bevt_client.h>
-#include "bevt_debug_p.h"
+    r = ipc_connect(fd, MAIN_SOCKET_PATH);
+    if(r<0) return r;
 
-typedef struct {
-    bozmessage_receiver_t   r;
-    bozmessage_sender_t     s;
-    unsigned int xindex;
-} bevt_central_conn_t;
-
-#define BEVT_CENTRAL_MAX_CONNS  10
-typedef GENSETB_TYPE(bevt_central_conn_t, BEVT_CENTRAL_MAX_CONNS) bevt_central_rconns_t;
-
-int main_socket_open(void);
-int main_socket_accept(const int);
-int main_socket_close(const int);
-
-/**
- *\}
- * End of group
- */
-
-#ifdef __cplusplus
+    return (errno=0, fd);
 }
-#endif
 
-#endif   // _BEVT_CENTRAL_PRIV_H_ 
+int main_socket_close(const int mfd) {
+    if(shutdown(mfd, SHUT_RDWR)<0) return -1;
+    if(fd_close(mfd)<0) return -1;
+    return (errno=0, 0);
+}
+
+    

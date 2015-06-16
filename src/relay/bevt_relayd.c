@@ -52,8 +52,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define USAGE "bevt_relayd <random db name>"
 #define X() strerr_dief1x(101, "internal inconsistency, please submit a bug-report.")
 
-static void cleanup (void) {
+static int mfd=-1;
 
+static void cleanup (void) {
+    main_socket_close(mfd);
 }
 
 static void handle_signals (void) {
@@ -108,15 +110,19 @@ int main (int argc, char const *const *argv) {
 
     for (;;) {
         register unsigned int n = 0 ;
-        iopause_fd x[2 + n] ;
+        iopause_fd x[4 + n] ;
         int r ;
+
+        if(mfd<0) mfd = main_socket_open();
+        if (mfd < 0) strerr_warnw1x("open_main_socket") ;
 
         tain_add_g(&deadline, &tain_infinite_relative) ;
         x[0].fd = 0 ; x[0].events = IOPAUSE_EXCEPT | IOPAUSE_READ ;
         x[1].fd = 1 ; x[1].events = IOPAUSE_EXCEPT | (unixmessage_sender_isempty(unixmessage_sender_1) ? 0 : IOPAUSE_WRITE ) ;
         x[2].fd = sfd ; x[2].events = IOPAUSE_READ ;
+        x[3].fd = mfd ; x[3].events = IOPAUSE_EXCEPT | IOPAUSE_READ ;
 
-        r = iopause_g(x, 2 + n, &deadline) ;
+        r = iopause_g(x, 4 + n, &deadline) ;
         if (r < 0) {
             cleanup() ;
             strerr_diefu1sys(111, "iopause") ;
@@ -134,7 +140,13 @@ int main (int argc, char const *const *argv) {
         }
 
         /* signals arrived */
-        if (x[3].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) handle_signals() ;
+        if (x[2].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) handle_signals() ;
+
+        /* main socket close */
+        if (x[3].revents & (IOPAUSE_EXCEPT)) {
+            close(mfd); 
+            mfd=-1;
+        }
 
         /* client is writing */
         if (!unixmessage_receiver_isempty(unixmessage_receiver_0) || x[0].revents & IOPAUSE_READ)
