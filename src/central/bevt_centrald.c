@@ -133,7 +133,7 @@ int main (int argc, char const *const *argv) {
             strerr_diefu1sys(111, "trap signals") ;
     }
 
-    GENSETB_init(bevt_central_conn_t, &relay_conns, 10);
+    GENSETB_init(bevt_central_conn_t, &relay_conns, BEVT_CENTRAL_MAX_CONNS);
 
     mfd = main_socket_open();
     if (mfd < 0) strerr_diefu1sys(111, "open_main_socket") ;

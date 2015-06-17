@@ -54,8 +54,28 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 static int mfd=-1;
 
+char central_r_buf[BEVT_MAX_DATA_SIZE];
+bozmessage_receiver_t central_receiver = BOZMESSAGE_RECEIVER_ZERO;
+bozmessage_sender_t central_sender = BOZMESSAGE_SENDER_ZERO;
+
 static void cleanup (void) {
     main_socket_close(mfd);
+}
+
+static int handle_connect_central(void) {
+    mfd = main_socket_open();
+    if (mfd < 0) { strerr_warnw1x("open_main_socket") ; return -1; }
+    bozmessage_receiver_init(&central_receiver, mfd, central_r_buf, BEVT_MAX_DATA_SIZE);
+    bozmessage_sender_init(&central_sender, mfd);
+    return 0;
+}
+
+static int handle_close_central(void) {
+    close(mfd); 
+    mfd=-1;
+    bozmessage_receiver_free(&central_receiver);
+    bozmessage_sender_free(&central_sender);
+    return 0;
 }
 
 static void handle_signals (void) {
@@ -110,19 +130,19 @@ int main (int argc, char const *const *argv) {
 
     for (;;) {
         register unsigned int n = 0 ;
-        iopause_fd x[4 + n] ;
+        iopause_fd x[5 + n] ;
         int r ;
 
-        if(mfd<0) mfd = main_socket_open();
-        if (mfd < 0) strerr_warnw1x("open_main_socket") ;
+        if(mfd<0) handle_connect_central();
 
         tain_add_g(&deadline, &tain_infinite_relative) ;
         x[0].fd = 0 ; x[0].events = IOPAUSE_EXCEPT | IOPAUSE_READ ;
         x[1].fd = 1 ; x[1].events = IOPAUSE_EXCEPT | (unixmessage_sender_isempty(unixmessage_sender_1) ? 0 : IOPAUSE_WRITE ) ;
         x[2].fd = sfd ; x[2].events = IOPAUSE_READ ;
-        x[3].fd = mfd ; x[3].events = IOPAUSE_EXCEPT | IOPAUSE_READ ;
+        x[3].fd = bozmessage_receiver_fd(&central_receiver) ; x[3].events = IOPAUSE_READ ;
+        x[4].fd = bozmessage_sender_fd(&central_sender) ; x[4].events = (bozmessage_sender_isempty(&central_sender) ? 0 : IOPAUSE_WRITE ) ;
 
-        r = iopause_g(x, 4 + n, &deadline) ;
+        r = iopause_g(x, 5 + n, &deadline) ;
         if (r < 0) {
             cleanup() ;
             strerr_diefu1sys(111, "iopause") ;
@@ -142,10 +162,15 @@ int main (int argc, char const *const *argv) {
         /* signals arrived */
         if (x[2].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) handle_signals() ;
 
+        /* main socket read or close */
+        if (x[3].revents & IOPAUSE_READ) {
+            handle_close_central();
+            continue;
+        }
+
         /* main socket close */
-        if (x[3].revents & (IOPAUSE_EXCEPT)) {
-            close(mfd); 
-            mfd=-1;
+        if (x[4].revents & IOPAUSE_WRITE) {
+            bozmessage_sender_flush(&central_sender);
         }
 
         /* client is writing */

@@ -15,6 +15,7 @@ add_executable(${BOZ_RELAY_APP}
 
 target_link_libraries(${BOZ_RELAY_APP}
     bevt_debug
+    bozmessage
     skarnet
     )
     

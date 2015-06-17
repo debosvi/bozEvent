@@ -53,5 +53,10 @@ int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context) {
         else
             BEVT_DEBUG_LOG_INFO("ack sent");
     }
+    {
+        bozmessage_t c = { .s = m->s, .len = m->len };
+        if (!bozmessage_put(&central_sender, &c))
+            BEVT_DEBUG_LOG_ERROR("unable to put to central");
+    }
     return 1;
 }

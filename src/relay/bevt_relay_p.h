@@ -47,7 +47,9 @@ extern "C"
 
 #include <skalibs/unixmessage.h>
 
+#include <bozCore/bozmessage.h>
 #include "bevt_debug_p.h"
+#include "bozEvent/bevt_client.h"
 
 #define BEVT_RELAY_PROG BEVT_PROG_PREFIX "bevt_relayd"
 #define BEVT_RELAY_BANNER1 "bevtrelay v1.0 (b)\n"
@@ -61,6 +63,9 @@ extern int bevt_relay_parse_prot_event(unixmessage_t const *m, void *context);
   
 int main_socket_open(void);
 int main_socket_close(const int);
+
+extern bozmessage_receiver_t central_receive;
+extern bozmessage_sender_t central_sender;
 
 /**
  *\}
