@@ -47,16 +47,25 @@ extern "C"
 
 #include <skalibs/unixmessage.h>
 #include <skalibs/genset.h>
+#include <skalibs/uint64.h>
 
 #include <bozCore/bozmessage.h>
+#include <bozCore/boztree.h>
 
 #include <bozEvent/bevt_client.h>
 #include "bevt_debug_p.h"
 
 typedef struct {
-    bozmessage_receiver_t   r;
-    bozmessage_sender_t     s;
-    unsigned int xindex;
+    uint64          nc;     /*!< notified count */ 
+    unsigned char   rs;     /*!< registered/subscribed status */
+} bevt_central_storage_t;
+
+typedef struct {
+    bozmessage_receiver_t   r;          /*!< receiver of messages */
+    bozmessage_sender_t     s;          /*!< sender of message */
+    boztree_t               t;          /*!< link to registered/subscribed ids */
+    unsigned int            xindex;     /*!< poll reverse index */
+    char*                   d;          /*!< receiver data buffer */
 } bevt_central_conn_t;
 
 #define BEVT_CENTRAL_MAX_CONNS  10

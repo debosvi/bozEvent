@@ -53,7 +53,9 @@ static int mfd=-1;
 static bevt_central_rconns_t relay_conns;
 
 static int handle_close(bevt_central_conn_t *p) {
+    boztree_free(&p->t);
     fd_close(bozmessage_receiver_fd(&p->r));
+    free(p->d);
     bozmessage_receiver_free(&p->r);  
     bozmessage_sender_free(&p->s);  
     return (errno=0, 0);
@@ -80,7 +82,9 @@ static int handle_accept(const int fd) {
             return (errno=ENOMEM, -1);
         }
         bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i);
+        BOZTREE_INIT(&p->t, bevt_central_storage_t);
         char *d = malloc(BEVT_MAX_DATA_SIZE);
+        p->d = d;
         bozmessage_receiver_init(&p->r, r, d, BEVT_MAX_DATA_SIZE);  
         bozmessage_sender_init(&p->s, 16*BEVT_MAX_DATA_SIZE);  
     }

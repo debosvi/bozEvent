@@ -1,5 +1,5 @@
 
-set(TEST_BIN test_msg_init_fini)
+set(TEST_BIN test_client_init_fini)
 add_executable(${TEST_BIN}
     init_fini.c
     )
