@@ -37,6 +37,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdlib.h>
 #include <errno.h>
 
+#include <skalibs/sgetopt.h>
 #include <skalibs/strerr2.h>
 #include <skalibs/sig.h>
 #include <skalibs/selfpipe.h>
@@ -109,7 +110,7 @@ static void handle_signals (void) {
 
 int main (int argc, char const *const *argv) {
     tain_t deadline ;
-    int sfd ;
+    int sfd, no_df = 0 ;
     pid_t child;
     PROG = "bevt_centrald" ;
 
@@ -118,9 +119,27 @@ int main (int argc, char const *const *argv) {
     if (ndelay_on(1) < 0) strerr_diefu2sys(111, "ndelay_on ", "1") ;
     if (sig_ignore(SIGPIPE) < 0) strerr_diefu1sys(111, "ignore SIGPIPE") ;
 
-    child = doublefork();
-    if (child < 0) strerr_diefu1sys(111, "doublefork") ;
-    else if (child) strerr_die1(0, "success: ", "doublefork") ; 
+
+    {
+        subgetopt_t l = SUBGETOPT_ZERO ;
+        for (;;)
+        {
+            register int opt = subgetopt_r(argc, argv, "n", &l) ;
+            if (opt == -1) break ;
+            switch (opt)
+            {
+                case 'n' : no_df = 1; break ;
+                default : strerr_dieusage(100, USAGE) ;
+            }
+        }
+        argc -= l.ind ; argv += l.ind ;
+    }
+
+    if(!no_df) {
+        child = doublefork();
+        if (child < 0) strerr_diefu1sys(111, "doublefork") ;
+        else if (child) strerr_die1(0, "success: ", "doublefork") ; 
+    }
 
     sfd = selfpipe_init() ;
     if (sfd < 0) strerr_diefu1sys(111, "selfpipe_init") ;
