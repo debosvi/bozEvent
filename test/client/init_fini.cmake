@@ -6,4 +6,5 @@ add_executable(${TEST_BIN}
 
 target_link_libraries(${TEST_BIN}
     bevt_client
+    bevt_relay
     )

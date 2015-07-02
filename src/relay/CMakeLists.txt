@@ -5,7 +5,17 @@ install(FILES bevt_relayd_dbcreate.sql
     PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
     )
 
-# build target
+# build targets
+set(BOZ_RELAY_LIB bevt_relay)
+
+set(SOURCES
+    bevt_relay_p.c
+    )
+    
+add_library(${BOZ_RELAY_LIB} STATIC
+    ${SOURCES}
+    )
+
 set(BOZ_RELAY_APP bevt_relayd)
 
 set(SOURCES

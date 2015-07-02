@@ -59,6 +59,23 @@ extern "C"
 #define BEVT_RELAY_BANNER2 "bevtrelay v1.0 (a)\n"
 #define BEVT_RELAY_BANNER2_LEN (sizeof BEVT_RELAY_BANNER2 - 1)
 
+/**
+ * @brief Relay private commands identifiers.
+ */
+typedef enum {
+    BEVT_RELAY_OP_REGISTER_FIRST=0,
+    BEVT_RELAY_OP_REGISTER_UPDATE,
+    BEVT_RELAY_OP_UNREGISTER,
+    BEVT_RELAY_OP_SUBSCRIBE_FIRST,
+    BEVT_RELAY_OP_SUBSCRIBE_UPDATE,
+    BEVT_RELAY_OP_UNSUBSCRIBE,
+    BEVT_RELAY_OP_NOTIFY,
+    BEVT_RELAY_OP_NB
+} bevt_relay_op_t;
+#define BEVT_RELAY_COMMAND_OP_LEN  (8)
+
+extern const char* bevt_relay_commands[BEVT_RELAY_OP_NB];
+
 extern int bevt_relay_db_init(char const *db_name);
 extern int bevt_relay_db_close(void);
 

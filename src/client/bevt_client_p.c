@@ -38,6 +38,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <skalibs/selfpipe.h>
 
 #include "bevt_client_p.h"
+#include "bevt_relay_p.h"
 
 bevt_client_glob_t bevt_client_g = BEVT_CLIENT_GLOB_ZERO;
 

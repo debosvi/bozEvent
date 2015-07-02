@@ -15,7 +15,9 @@ int main(void) {
         fprintf(stderr, "bevt_client_init failed, errno(%d/%s)\n", errno, strerror(errno));
 
     while(i++<(10*60)) {
-        bevt_client_process(100);
+        bevt_client_register(100, BEVT_CLIENT_PRIO_DEFAULT);
+        //bevt_client_process(100);
+        poll(0,0, 1000);
     };
 
     ret=bevt_client_finalise();

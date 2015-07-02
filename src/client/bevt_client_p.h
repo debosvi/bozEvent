@@ -51,14 +51,9 @@ extern "C"
 #include <skalibs/unixmessage.h>
 
 #include "bevt_debug_p.h"
+#include "bevt_relay_p.h"
 #include "bozEvent/bevt_client.h"
 
-#define BEVT_RELAY_PROG BEVT_PROG_PREFIX "bevt_relayd"
-#define BEVT_RELAY_BANNER1 "bevtrelay v1.0 (b)\n"
-#define BEVT_RELAY_BANNER1_LEN (sizeof BEVT_RELAY_BANNER1 - 1)
-#define BEVT_RELAY_BANNER2 "bevtrelay v1.0 (a)\n"
-#define BEVT_RELAY_BANNER2_LEN (sizeof BEVT_RELAY_BANNER2 - 1)
-  
 /**
  * @brief Messsage global type.
  */
