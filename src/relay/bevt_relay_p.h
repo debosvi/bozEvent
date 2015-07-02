@@ -45,6 +45,8 @@ extern "C"
 {
 #endif
 
+#include <sqlite3.h>
+
 #include <skalibs/unixmessage.h>
 
 #include <bozCore/bozmessage.h>
@@ -58,12 +60,15 @@ extern "C"
 #define BEVT_RELAY_BANNER2_LEN (sizeof BEVT_RELAY_BANNER2 - 1)
 
 extern int bevt_relay_db_init(char const *db_name);
+extern int bevt_relay_db_close(void);
+
 extern int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context);
 extern int bevt_relay_parse_prot_event(unixmessage_t const *m, void *context);
   
 int main_socket_open(void);
 int main_socket_close(const int);
 
+extern sqlite3 *bevt_relayd_db_g;
 extern bozmessage_receiver_t central_receive;
 extern bozmessage_sender_t central_sender;
 

@@ -8,6 +8,7 @@ include(CTest)
 include(tools.cmake)
 
 #set (CMAKE_VERBOSE_MAKEFILE ON)
+
 add_definitions(-DBEVT_PROG_PREFIX="${BINARY_INSTALL_DIR}/")
 add_definitions(-D_POSIX_C_SOURCE=200809L)
 

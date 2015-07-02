@@ -60,6 +60,7 @@ bozmessage_sender_t central_sender = BOZMESSAGE_SENDER_ZERO;
 
 static void cleanup (void) {
     main_socket_close(mfd);
+    bevt_relay_db_close();
 }
 
 static int handle_connect_central(void) {

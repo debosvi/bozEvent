@@ -37,56 +37,22 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <errno.h>
 #include <stdio.h>
 
-#include <skalibs/environ.h>
-#include <skalibs/env.h>
 #include <skalibs/djbunix.h>
 
 #include "bevt_relay_p.h"
 
-sqlite3 *bevt_relayd_db_g=0;
 
-int bevt_relay_db_init(char const *db_name) {
+int bevt_relay_db_close(void) {
     int ret=0, r;
-    char const * restart;
-    stralloc sa_db = STRALLOC_ZERO;
-    stralloc sa_sql = STRALLOC_ZERO;
-    stralloc sa_sql2 = STRALLOC_ZERO;
 
-    restart = env_get("BEVT_RELAY_RESTART");
-    stralloc_cats(&sa_db, "/tmp/boz/bevt/");
-    stralloc_cats(&sa_db, db_name);
-    stralloc_cats(&sa_db, ".sqlite");
-
-    if(!restart) {
-        BEVT_DEBUG_LOG_INFO("db init on (%s)", db_name);
-        rm_rf(sa_db.s);
-    }
-    else
-        BEVT_DEBUG_LOG_INFO("reuse db (%s)", db_name);
-
-    r = sqlite3_open(sa_db.s, &bevt_relayd_db_g);
+    r = sqlite3_close(bevt_relayd_db_g);
     if(r != SQLITE_OK) {
-        BEVT_DEBUG_LOG_ERROR("db open failed (%s), msg(%s)", sa_db.s, sqlite3_errmsg(bevt_relayd_db_g));
+        BEVT_DEBUG_LOG_ERROR("db close failed, msg(%s)", sqlite3_errmsg(bevt_relayd_db_g));
         ret=-1;
         goto exit;
     }
 
-    if(!restart) {
-        stralloc_cats(&sa_sql, SCRIPT_INSTALL_DIR);
-        stralloc_cats(&sa_sql, "/bevt_relayd_dbcreate.sql");
-        openreadclose(sa_sql.s, &sa_sql2, 0);
-        r = sqlite3_exec(bevt_relayd_db_g, sa_sql2.s, 0, 0, 0); 
-        if(r != SQLITE_OK) {
-            BEVT_DEBUG_LOG_ERROR("db create failed (%s), msg(%s)", sa_db.s, sqlite3_errmsg(bevt_relayd_db_g));
-            ret=-1;
-            goto exit;
-        }
-    }
-
 exit:
-    stralloc_free(&sa_db);
-    stralloc_free(&sa_sql);
-    stralloc_free(&sa_sql2);
     if(!ret) errno=0;
     return ret;
 }
