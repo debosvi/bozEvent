@@ -59,6 +59,16 @@ extern "C"
 typedef uint64_t bevt_client_id_t;
 
 /**
+ * @brief bozEvent client identifier priority level.
+ */
+typedef enum {
+    BEVT_CLIENT_PRIO_DEFAULT=0,
+    BEVT_CLIENT_PRIO_MINOR,
+    BEVT_CLIENT_PRIO_MEDIUM,
+    BEVT_CLIENT_PRIO_MAJOR
+} bevt_client_prio_t;
+
+/**
  * @brief Invalid message identifier value.
  */
 #define BEVT_CLIENT_ID_INVALID (-1)
@@ -81,12 +91,71 @@ int bevt_client_finalise(void);
 
 /**
  * @brief Process bozEvent client endpoint.
+ * @param[in]   timeout in milliseconds.
  * @return      error code.
  * @retval      0 in case of success.
  * @retval      -1 in case of failure, errno set accordingly.
  */ 
 int bevt_client_process(const int to_ms);
 
+/**
+ * @brief Register to a specific event identifier.
+ * @param[in]   id event identifier.
+ * @param[in]   event priority management.
+ * @return      error code.
+ * @retval      0 in case of success.
+ * @retval      -1 in case of failure, errno set accordingly.
+ */ 
+int bevt_client_register(const bevt_client_id_t, const bevt_client_prio_t prio);
+
+/**
+ * @brief Register to a specific event identifier (update only).
+ * @param[in]   id event identifier.
+ * @param[in]   event priority management.
+ * @return      error code.
+ * @retval      0 in case of success.
+ * @retval      -1 in case of failure, errno set accordingly.
+ */ 
+int bevt_client_register_update(const bevt_client_id_t, const bevt_client_prio_t prio);
+
+/**
+ * @brief Unregister from a specific event identifier.
+ * @param[in]   id event identifier.
+ * @return      error code.
+ * @retval      0 in case of success.
+ * @retval      -1 in case of failure, errno set accordingly.
+ */ 
+int bevt_client_unregister(const bevt_client_id_t);
+
+/**
+ * @brief Subscribe to a specific event identifier.
+ * @param[in]   id event identifier.
+ * @param[in]   event priority management.
+ * @return      error code.
+ * @retval      0 in case of success.
+ * @retval      -1 in case of failure, errno set accordingly.
+ */ 
+int bevt_client_subscribe(const bevt_client_id_t, const bevt_client_prio_t prio);
+
+/**
+ * @brief Subscribe to a specific event identifier (update only).
+ * @param[in]   id event identifier.
+ * @param[in]   event priority management.
+ * @return      error code.
+ * @retval      0 in case of success.
+ * @retval      -1 in case of failure, errno set accordingly.
+ */ 
+int bevt_client_subscribe_update(const bevt_client_id_t, const bevt_client_prio_t prio);
+
+/**
+ * @brief Unsubscribe from a specific event identifier.
+ * @param[in]   id event identifier.
+ * @param[in]   event priority management.
+ * @return      error code.
+ * @retval      0 in case of success.
+ * @retval      -1 in case of failure, errno set accordingly.
+ */ 
+int bevt_client_unsubscribe(const bevt_client_id_t);
 
 /**
  *\}
