@@ -1,5 +1,5 @@
 CREATE TABLE `credentials` (
-    `id`    INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+    `id`    INTEGER PRIMARY KEY UNIQUE,
     `register`  INTEGER,
     `subscribe` INTEGER,
     `notify`    INTEGER,

@@ -24,10 +24,10 @@ int main(void) {
             fprintf(stderr, "bevt_relay_db_get_elem: FAILURE\n");
         else if(!ret) {
             fprintf(stderr, "bevt_relay_db_get_elem: OK\n");
-            fprintf(stderr, "\tid(%llu)\n", elem.id);
+            fprintf(stderr, "\tid(%llu)\n", (long long unsigned int)elem.id);
             fprintf(stderr, "\tregister(%d)\n", elem.reg);
             fprintf(stderr, "\tsubscribe(%d)\n", elem.sub);
-            fprintf(stderr, "\tnotify(%llu)\n", elem.nt);
+            fprintf(stderr, "\tnotify(%llu)\n", (long long unsigned int)elem.nt);
             fprintf(stderr, "\tpriority(%c)\n", elem.prio);
         }
 
@@ -35,10 +35,24 @@ int main(void) {
 
         if(ret<0)
             fprintf(stderr, "bevt_relay_db_check_reg: FAILURE\n");
-        else if(!ret)
+        else if(!ret) {
             fprintf(stderr, "bevt_relay_db_check_reg: NOK\n");
-        else
+            elem.id = i;
+            ret=bevt_relay_db_set_elem(&elem);
+            if(ret<0)
+                fprintf(stderr, "bevt_relay_db_ste_elem: FAILURE\n");
+            else
+                fprintf(stderr, "bevt_relay_db_ste_elem: SUCCESS\n");
+        }
+        else {
             fprintf(stderr, "bevt_relay_db_check_reg: SUCCESS\n");
+            elem.nt++;
+            ret=bevt_relay_db_set_elem(&elem);
+            if(ret<0)
+                fprintf(stderr, "bevt_relay_db_ste_elem: FAILURE\n");
+            else
+                fprintf(stderr, "bevt_relay_db_ste_elem: SUCCESS\n");
+        }
 
         ret=bevt_relay_db_check_sub(i);
 

@@ -12,9 +12,10 @@ set(SOURCES
     bevt_relay_p.c
     bevt_relay_db_check_reg.c
     bevt_relay_db_check_sub.c
+    bevt_relay_db_close.c
     bevt_relay_db_get_elem.c
     bevt_relay_db_init.c
-    bevt_relay_db_close.c
+    bevt_relay_db_set_elem.c
     )
     
 add_library(${BOZ_RELAY_LIB} STATIC

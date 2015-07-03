@@ -50,12 +50,55 @@ static void answer(char c) {
 }
 
 int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context) {
+    int r;
+    bevt_client_id_t id;
     (void)context;
 
     BEVT_DEBUG_LOG_INFO("message received, len(%d)", m->len);
-    answer(0);
+    if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_REGISTER_FIRST], BEVT_RELAY_COMMAND_OP_LEN)) {
+        uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        BEVT_DEBUG_LOG_INFO("register command, id(%llu)", (long long unsigned int)id);
+        r = bevt_relay_db_check_reg(id);
+        if(!r) {
+            BEVT_DEBUG_LOG_INFO("register todo");
+            bevt_relay_db_elem_t elem;
+            memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
+            elem.id = id;
+            elem.reg = 1;
+            bevt_relay_db_set_elem(&elem);
+            answer(0);
+        }
+        else {
+            BEVT_DEBUG_LOG_INFO("register already done");
+            answer(EALREADY);
+        }
 
-    {
+    }
+    else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_UNREGISTER], BEVT_RELAY_COMMAND_OP_LEN)) {
+        uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        BEVT_DEBUG_LOG_INFO("register command, id(%llu)", (long long unsigned int)id);
+        r = bevt_relay_db_check_sub(id);
+        if(!r) {
+            BEVT_DEBUG_LOG_INFO("subscribe todo");
+            bevt_relay_db_elem_t elem;
+            memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
+            elem.id = id;
+            elem.sub = 1;
+            bevt_relay_db_set_elem(&elem);
+            answer(0);
+        }
+        else {
+            BEVT_DEBUG_LOG_INFO("subscribe already done");
+            answer(EALREADY);
+        }
+
+    }
+    else {
+        BEVT_DEBUG_LOG_INFO("unknown command");
+        answer(ECANCELED);
+    }
+
+    if(0) {
         bozmessage_t c = { .s = m->s, .len = m->len };
         if (!bozmessage_put(&central_sender, &c))
             BEVT_DEBUG_LOG_ERROR("unable to put to central");

@@ -41,13 +41,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 //*****************************************************************************
 //*****************************************************************************
-int bevt_client_register(const bevt_client_id_t id, const bevt_client_prio_t prio) {
+int bevt_client_unregister(const bevt_client_id_t id) {
     int r;
 
-    if( !id ||
-        (prio<BEVT_CLIENT_PRIO_DEFAULT) ||
-        (prio>BEVT_CLIENT_PRIO_MAJOR) 
-        )  {
+    if(!id)  {
         BEVT_DEBUG_LOG_ERROR("Bad parameters");
         return (errno=EINVAL, -1);
     }
@@ -57,7 +54,7 @@ int bevt_client_register(const bevt_client_id_t id, const bevt_client_prio_t pri
         tain_t deadline;
         char fmt_id[8];
         siovec_t v[2] = { 
-            { .s = (char*)bevt_relay_commands[BEVT_RELAY_OP_REGISTER_FIRST], .len = BEVT_RELAY_COMMAND_OP_LEN }, 
+            { .s = (char*)bevt_relay_commands[BEVT_RELAY_OP_UNREGISTER], .len = BEVT_RELAY_COMMAND_OP_LEN }, 
             { .s = &fmt_id[0], .len = 8} 
         } ;
         uint64_pack(&fmt_id[0], id);

@@ -45,6 +45,7 @@ extern "C"
 {
 #endif
 
+#include <errno.h>
 #include <sqlite3.h>
 
 #include <skalibs/unixmessage.h>
@@ -80,14 +81,15 @@ extern int bevt_relay_db_init(char const *db_name);
 extern int bevt_relay_db_close(void);
 
 typedef struct {
-    uint64_t    id;
-    uint64_t    nt;
-    char        reg;
-    char        sub;
-    char        prio;
+    uint64_t        id;
+    uint64_t        nt;
+    unsigned char   reg;
+    unsigned char   sub;
+    unsigned char   prio;
 } bevt_relay_db_elem_t;
 
 extern int bevt_relay_db_get_elem(const bevt_client_id_t, bevt_relay_db_elem_t* const);
+extern int bevt_relay_db_set_elem(bevt_relay_db_elem_t const * const);
 extern int bevt_relay_db_check_reg(const bevt_client_id_t);
 extern int bevt_relay_db_check_sub(const bevt_client_id_t);
 
