@@ -78,6 +78,8 @@ extern const char* bevt_relay_commands[BEVT_RELAY_OP_NB];
 
 extern int bevt_relay_db_init(char const *db_name);
 extern int bevt_relay_db_close(void);
+extern int bevt_relay_db_check_reg(const bevt_client_id_t);
+extern int bevt_relay_db_check_sub(const bevt_client_id_t);
 
 extern int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context);
 extern int bevt_relay_parse_prot_event(unixmessage_t const *m, void *context);
