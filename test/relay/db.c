@@ -46,7 +46,7 @@ int main(void) {
         }
         else {
             fprintf(stderr, "bevt_relay_db_check_reg: SUCCESS\n");
-            elem.nt++;
+            elem.reg=~elem.reg;
             ret=bevt_relay_db_set_elem(&elem);
             if(ret<0)
                 fprintf(stderr, "bevt_relay_db_ste_elem: FAILURE\n");

@@ -15,16 +15,30 @@ int main(void) {
     if(ret)
         fprintf(stderr, "bevt_client_init failed, errno(%d/%s)\n", errno, strerror(errno));
 
-    while(i++<(10*60)) {
+//    while(i++<(10*60)) {
+    i++;
         ret = bevt_client_register(i, BEVT_CLIENT_PRIO_DEFAULT);
-        if(ret<=0)
-            fprintf(stderr, "bevt_client_register failed, id(%d), errno(%d/%s)\n", i, errno, strerror(errno));
+        if(ret<0)
+            fprintf(stderr, "bevt_client_register failed 1, id(%d), errno(%d/%s)\n", i, errno, strerror(errno));
+
+        ret = bevt_client_register(i, BEVT_CLIENT_PRIO_DEFAULT);
+        if(ret<0)
+            fprintf(stderr, "bevt_client_register failed 2, id(%d), errno(%d/%s)\n", i, errno, strerror(errno));
+
         ret = bevt_client_unregister(i);
-        if(ret<=0)
-            fprintf(stderr, "bevt_client_unregister failed, id(%d), errno(%d/%s)\n", i, errno, strerror(errno));
+        if(ret<0)
+            fprintf(stderr, "bevt_client_unregister failed 1, id(%d), errno(%d/%s)\n", i, errno, strerror(errno));
+
+        ret = bevt_client_unregister(i);
+        if(ret<0)
+            fprintf(stderr, "bevt_client_unregister failed 2, id(%d), errno(%d/%s)\n", i, errno, strerror(errno));
+
+        ret = bevt_client_register(i, BEVT_CLIENT_PRIO_DEFAULT);
+        if(ret<0)
+            fprintf(stderr, "bevt_client_register failed 2, id(%d), errno(%d/%s)\n", i, errno, strerror(errno));
         //bevt_client_process(100);
         poll(0,0, 1000);
-    };
+  //  };
 
     ret=bevt_client_finalise();
     if(ret)

@@ -52,6 +52,7 @@ static void answer(char c) {
 int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context) {
     int r;
     bevt_client_id_t id;
+    bevt_relay_db_elem_t elem;
     (void)context;
 
     BEVT_DEBUG_LOG_INFO("message received, len(%d)", m->len);
@@ -61,7 +62,6 @@ int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context) {
         r = bevt_relay_db_check_reg(id);
         if(!r) {
             BEVT_DEBUG_LOG_INFO("register todo");
-            bevt_relay_db_elem_t elem;
             memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
             elem.id = id;
             elem.reg = 1;
@@ -74,13 +74,12 @@ int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context) {
         }
 
     }
-    else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_UNREGISTER], BEVT_RELAY_COMMAND_OP_LEN)) {
+    else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_SUBSCRIBE_FIRST], BEVT_RELAY_COMMAND_OP_LEN)) {
         uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
-        BEVT_DEBUG_LOG_INFO("register command, id(%llu)", (long long unsigned int)id);
-        r = bevt_relay_db_check_sub(id);
+        BEVT_DEBUG_LOG_INFO("subscribe command, id(%llu)", (long long unsigned int)id);
+        r = bevt_relay_db_check_reg(id);
         if(!r) {
             BEVT_DEBUG_LOG_INFO("subscribe todo");
-            bevt_relay_db_elem_t elem;
             memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
             elem.id = id;
             elem.sub = 1;
@@ -90,6 +89,38 @@ int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context) {
         else {
             BEVT_DEBUG_LOG_INFO("subscribe already done");
             answer(EALREADY);
+        }
+
+    }
+    else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_UNREGISTER], BEVT_RELAY_COMMAND_OP_LEN)) {
+        uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        BEVT_DEBUG_LOG_INFO("unregister command, id(%llu)", (long long unsigned int)id);
+        r = bevt_relay_db_get_elem(id, &elem);
+        if(!r && elem.reg) {
+            BEVT_DEBUG_LOG_INFO("unregister todo");
+            elem.reg = 0;
+            bevt_relay_db_set_elem(&elem);
+            answer(0);
+        }
+        else {
+            BEVT_DEBUG_LOG_INFO("unregister failed");
+            answer(ENOENT);
+        }
+
+    }
+    else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_UNSUBSCRIBE], BEVT_RELAY_COMMAND_OP_LEN)) {
+        uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        BEVT_DEBUG_LOG_INFO("unsubscribe command, id(%llu)", (long long unsigned int)id);
+        r = bevt_relay_db_get_elem(id, &elem);
+        if(!r && elem.sub) {
+            BEVT_DEBUG_LOG_INFO("unsubscribe todo");
+            elem.sub = 0;
+            bevt_relay_db_set_elem(&elem);
+            answer(0);
+        }
+        else {
+            BEVT_DEBUG_LOG_INFO("unsubscribe failed");
+            answer(ENOENT);
         }
 
     }

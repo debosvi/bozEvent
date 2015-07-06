@@ -41,7 +41,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 //*****************************************************************************
 //*****************************************************************************
-int bevt_client_register(const bevt_client_id_t id, const bevt_client_prio_t prio) {
+int bevt_client_subscribe(const bevt_client_id_t id, const bevt_client_prio_t prio) {
     int r;
 
     if( !id ||
@@ -58,7 +58,7 @@ int bevt_client_register(const bevt_client_id_t id, const bevt_client_prio_t pri
         char fmt_id[8];
         char fmt_prio;
         siovec_t v[3] = { 
-            { .s = (char*)bevt_relay_commands[BEVT_RELAY_OP_REGISTER_FIRST], .len = BEVT_RELAY_COMMAND_OP_LEN }, 
+            { .s = (char*)bevt_relay_commands[BEVT_RELAY_OP_SUBSCRIBE_FIRST], .len = BEVT_RELAY_COMMAND_OP_LEN }, 
             { .s = &fmt_id[0], .len = 8},
             { .s = &fmt_prio, .len = 1} 
         };
