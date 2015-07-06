@@ -22,7 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 /*!
- * \file        bevt_client_p.h
+ * \file        bevt_debug_p.h
  * \brief       Message Management private APIs.
  * \version     0.1
  * \date        2013/01/14
@@ -47,10 +47,17 @@ extern "C"
 
 #include <skalibs/strerr.h>
 
+#if 0
 #define BEVT_DEBUG_LOG_INFO(...) bevt_debug_log(BEVT_DEBUG_INFO, __PRETTY_FUNCTION__, __VA_ARGS__)
 #define BEVT_DEBUG_LOG_WARNING(...) bevt_debug_log(BEVT_DEBUG_WARNING, __PRETTY_FUNCTION__, __VA_ARGS__)
 #define BEVT_DEBUG_LOG_ERROR(...) bevt_debug_log(BEVT_DEBUG_ERROR, __PRETTY_FUNCTION__, __VA_ARGS__)
 #define BEVT_DEBUG_LOG_CRITICAL(...) bevt_debug_log(BEVT_DEBUG_CRITICAL, __PRETTY_FUNCTION__, __VA_ARGS__)
+#else
+#define BEVT_DEBUG_LOG_INFO(...)        {}
+#define BEVT_DEBUG_LOG_WARNING(...)     {}
+#define BEVT_DEBUG_LOG_ERROR(...)       {}
+#define BEVT_DEBUG_LOG_CRITICAL(...)    {}
+#endif
 
 typedef enum {
     BEVT_DEBUG_INFO=0,

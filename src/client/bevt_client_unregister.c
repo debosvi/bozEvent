@@ -22,7 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 /*!
- * \file        bevt_client_init.c
+ * \file        bevt_client_unregister.c
  * \brief       Message creation implementation.
  * \version     0.1
  * \date        2013/01/14

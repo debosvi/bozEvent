@@ -22,7 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 /*!
- * \file        bevt_client_parse_prot_cmd.c
+ * \file        bevt_client_parse_prot_event.c
  * \brief       BozEvent relay client executable.
  * \version     0.1.0
  * \date        2013/01/14
@@ -40,6 +40,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "bevt_client_p.h"
 
 int bevt_client_parse_prot_event(unixmessage_t const *m, void *context) {
+    (void)m;
     (void)context;
 
     BEVT_DEBUG_LOG_INFO("message received, len(%d)", m->len);

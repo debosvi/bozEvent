@@ -22,7 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 /*!
- * \file        bevt_relayd.c
+ * \file        bevt_centrald.c
  * \brief       BozEvent relay client executable.
  * \version     0.1.0
  * \date        2013/01/14

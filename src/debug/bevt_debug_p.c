@@ -22,7 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 /*!
- * \file        bevt_client_p.c
+ * \file        bevt_debug_p.c
  * \brief       Message Management private APIs.
  * \version     0.1
  * \date        2013/01/14

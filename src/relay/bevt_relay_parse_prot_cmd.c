@@ -22,7 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 /*!
- * \file        bevt_relayd.c
+ * \file        bevt_relay_parse_prot_cmd.c
  * \brief       BozEvent relay client executable.
  * \version     0.1.0
  * \date        2013/01/14
@@ -42,11 +42,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 static void answer(char c) {
     unixmessage_t am = { .s = &c, .len = 1, .fds = 0, .nfds = 0 } ;
     if (!unixmessage_put(unixmessage_sender_1, &am))
-        BEVT_DEBUG_LOG_ERROR("unable to put ack");
+        BEVT_DEBUG_LOG_ERROR("unable to put ack")
     else if (!unixmessage_sender_flush(unixmessage_sender_1))
-        BEVT_DEBUG_LOG_ERROR("unable to send ack");
+        BEVT_DEBUG_LOG_ERROR("unable to send ack")
     else
-        BEVT_DEBUG_LOG_INFO("ack sent");
+        BEVT_DEBUG_LOG_INFO("ack sent")
 }
 
 int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context) {

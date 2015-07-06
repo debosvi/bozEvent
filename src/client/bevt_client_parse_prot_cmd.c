@@ -41,6 +41,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 int bevt_client_parse_prot_cmd(unixmessage_t const *m, void *context) {
     (void)context;
+    (void)m;
 
     BEVT_DEBUG_LOG_INFO("message received, len(%d)", m->len);
     return 1;

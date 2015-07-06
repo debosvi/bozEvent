@@ -59,9 +59,9 @@ int bevt_client_process(const int to_ms) {
 
         x[0].fd = bevt_client_g.sfd ; x[0].events = IOPAUSE_READ ;
         x[1].fd = skaclient_sfd(&bevt_client_g.connection) ; x[1].events = IOPAUSE_READ ;
-        x[2].fd = skaclient_afd(&bevt_client_g.connection) ; x[1].events = IOPAUSE_READ ;
+        x[2].fd = skaclient_afd(&bevt_client_g.connection) ; x[2].events = IOPAUSE_READ ;
 
-        r = iopause_g(x, 1, &deadline) ;
+        r = iopause_g(x, 3, &deadline) ;
         if (r < 0) {
             BEVT_DEBUG_LOG_ERROR("iopause failed");
             return -1;
@@ -69,18 +69,6 @@ int bevt_client_process(const int to_ms) {
     
         if(!r) {
             BEVT_DEBUG_LOG_INFO("nothing to do");
-            {
-                char msg[] = "Toto is dead";
-                unixmessage_t m = { .s=msg, .len=12, .fds=0, .nfds=0 };
-
-                if(!unixmessage_put(&bevt_client_g.connection.syncout, &m))
-                    BEVT_DEBUG_LOG_ERROR("unable to put message");
-                else if(!unixmessage_sender_flush(&bevt_client_g.connection.syncout))
-                    BEVT_DEBUG_LOG_ERROR("unable to send message");
-                else 
-                    BEVT_DEBUG_LOG_INFO("msg sent");
-
-            }
             break;
         }
 
