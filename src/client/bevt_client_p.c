@@ -82,8 +82,9 @@ void bevt_client_handle_signals (void) {
                 int r=wait_pid(bevt_client_g.connection.pid, &wstat);
                 if(r==bevt_client_g.connection.pid) {
                     skaclient_end(&bevt_client_g.connection);
-                    if(bevt_client_start_relay(1)<0)
+                    if(bevt_client_start_relay(1)<0) {
                         BEVT_DEBUG_LOG_ERROR("failed restart relay");
+                    }
                 }
                 else {
                     BEVT_DEBUG_LOG_ERROR("pid differs (expected:%d, compared:%d)", bevt_client_g.connection.pid, r);

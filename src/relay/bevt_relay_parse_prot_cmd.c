@@ -41,12 +41,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 static void answer(char c) {
     unixmessage_t am = { .s = &c, .len = 1, .fds = 0, .nfds = 0 } ;
-    if (!unixmessage_put(unixmessage_sender_1, &am))
-        BEVT_DEBUG_LOG_ERROR("unable to put ack")
-    else if (!unixmessage_sender_flush(unixmessage_sender_1))
-        BEVT_DEBUG_LOG_ERROR("unable to send ack")
-    else
-        BEVT_DEBUG_LOG_INFO("ack sent")
+    if (!unixmessage_put(unixmessage_sender_1, &am)) {
+        BEVT_DEBUG_LOG_ERROR("unable to put ack");
+    }
+    else if (!unixmessage_sender_flush(unixmessage_sender_1)) {
+        BEVT_DEBUG_LOG_ERROR("unable to send ack");
+    }
+    else {
+        BEVT_DEBUG_LOG_INFO("ack sent");
+    }
 }
 
 int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context) {
@@ -131,8 +134,9 @@ int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context) {
 
     if(0) {
         bozmessage_t c = { .s = m->s, .len = m->len };
-        if (!bozmessage_put(&central_sender, &c))
+        if (!bozmessage_put(&central_sender, &c)) {
             BEVT_DEBUG_LOG_ERROR("unable to put to central");
+        }
     }
     return 1;
 }

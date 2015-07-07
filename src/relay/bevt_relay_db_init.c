@@ -61,8 +61,9 @@ int bevt_relay_db_init(char const *db_name) {
         BEVT_DEBUG_LOG_INFO("db init on (%s)", db_name);
         rm_rf(sa_db.s);
     }
-    else
+    else {
         BEVT_DEBUG_LOG_INFO("reuse db (%s)", db_name);
+    }
 
     r = sqlite3_open(sa_db.s, &bevt_relayd_db_g);
     if(r != SQLITE_OK) {

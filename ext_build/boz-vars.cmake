@@ -47,6 +47,10 @@ if(EXISTS "${LOAD_CONFIG_DIR}/Config.in")
 add_definitions(-include ${CMAKE_BINARY_DIR}/config/config.h )
 endif()
 
+if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
+    add_definitions(-D__DEBUG__)
+endif()
+
 add_definitions(-std=c99)
 add_definitions(-Wall  -Wextra)
 

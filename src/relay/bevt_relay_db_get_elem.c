@@ -55,8 +55,9 @@ static int bevt_relay_db_elem_cb(void *data, int argc, char **argv, char **azCol
             elem->sub = ((*argv[i]=='0') ? 0 : 1);
         else if(!strncmp("prio", azColName[i], 4))
             elem->prio = *argv[i];
-        else
+        else {
             BEVT_DEBUG_LOG_ERROR("%s: unknown column(%s), value(%s)", __PRETTY_FUNCTION__, azColName[i], argv[i]);
+        }
     }
     return 0;
 }

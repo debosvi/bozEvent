@@ -47,16 +47,16 @@ extern "C"
 
 #include <skalibs/strerr.h>
 
-#if 0
+#ifdef __DEBUG__
 #define BEVT_DEBUG_LOG_INFO(...) bevt_debug_log(BEVT_DEBUG_INFO, __PRETTY_FUNCTION__, __VA_ARGS__)
 #define BEVT_DEBUG_LOG_WARNING(...) bevt_debug_log(BEVT_DEBUG_WARNING, __PRETTY_FUNCTION__, __VA_ARGS__)
 #define BEVT_DEBUG_LOG_ERROR(...) bevt_debug_log(BEVT_DEBUG_ERROR, __PRETTY_FUNCTION__, __VA_ARGS__)
 #define BEVT_DEBUG_LOG_CRITICAL(...) bevt_debug_log(BEVT_DEBUG_CRITICAL, __PRETTY_FUNCTION__, __VA_ARGS__)
 #else
-#define BEVT_DEBUG_LOG_INFO(...)        {}
-#define BEVT_DEBUG_LOG_WARNING(...)     {}
-#define BEVT_DEBUG_LOG_ERROR(...)       {}
-#define BEVT_DEBUG_LOG_CRITICAL(...)    {}
+#define BEVT_DEBUG_LOG_INFO(...) 
+#define BEVT_DEBUG_LOG_WARNING(...) 
+#define BEVT_DEBUG_LOG_ERROR(...) 
+#define BEVT_DEBUG_LOG_CRITICAL(...) 
 #endif
 
 typedef enum {
