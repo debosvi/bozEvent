@@ -196,8 +196,7 @@ int main (int argc, char const *const *argv) {
         for (i=0 ; i<n; i++) {
             register bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i) ;
             if (x[p->xindex].revents & IOPAUSE_READ) {
-                bozmessage_t m ;
-                register int rr = sanitize_read(bozmessage_receive(&p->r, &m)) ;
+                register int rr = bozmessage_handle(&p->r, bevt_central_parse_prot_cmd, 0) ;
                 if (!rr) continue ;
                 if (rr < 0) {
                     handle_close(p) ;

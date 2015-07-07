@@ -71,9 +71,11 @@ typedef struct {
 #define BEVT_CENTRAL_MAX_CONNS  10
 typedef GENSETB_TYPE(bevt_central_conn_t, BEVT_CENTRAL_MAX_CONNS) bevt_central_rconns_t;
 
-int main_socket_open(void);
-int main_socket_accept(const int);
-int main_socket_close(const int);
+extern int main_socket_open(void);
+extern int main_socket_accept(const int);
+extern int main_socket_close(const int);
+
+extern int bevt_central_parse_prot_cmd(bozmessage_t const *, void *);
 
 /**
  *\}
