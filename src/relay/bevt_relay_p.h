@@ -46,7 +46,6 @@ extern "C"
 #endif
 
 #include <errno.h>
-#include <sqlite3.h>
 
 #include <skalibs/unixmessage.h>
 
@@ -99,7 +98,6 @@ extern int bevt_relay_parse_prot_event(unixmessage_t const *m, void *context);
 int main_socket_open(void);
 int main_socket_close(const int);
 
-extern sqlite3 *bevt_relayd_db_g;
 extern bozmessage_receiver_t central_receive;
 extern bozmessage_sender_t central_sender;
 

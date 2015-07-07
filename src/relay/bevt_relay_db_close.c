@@ -43,8 +43,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 int bevt_relay_db_close(void) {
-    int ret=0, r;
+    int ret=0;
 
+/*
     r = sqlite3_close(bevt_relayd_db_g);
     if(r != SQLITE_OK) {
         BEVT_DEBUG_LOG_ERROR("db close failed, msg(%s)", sqlite3_errmsg(bevt_relayd_db_g));
@@ -53,6 +54,7 @@ int bevt_relay_db_close(void) {
     }
 
 exit:
+*/
     if(!ret) errno=0;
     return ret;
 }
