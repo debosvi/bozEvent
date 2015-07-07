@@ -56,6 +56,27 @@ static void answer(char c) {
 
 //*****************************************************************************
 //*****************************************************************************
+static int send_to_central(const bevt_client_id_t id, const bevt_relay_op_t op) {
+    char fmt_id[8];
+    siovec_t v[2] = { 
+        { .s = (char*)bevt_relay_commands[op], .len = BEVT_RELAY_COMMAND_OP_LEN }, 
+        { .s = &fmt_id[0], .len = 8}
+    };
+    bozmessage_v_t c = { .v = &v[0], .vlen = 2 };
+    uint64_pack(&fmt_id[0], id);
+
+    if (!bozmessage_putv(&central_sender, &c)) {
+        BEVT_DEBUG_LOG_ERROR("unable to put to central");
+    }
+    else if(!bozmessage_sender_flush(&central_sender)) {
+        BEVT_DEBUG_LOG_ERROR("unable to send to central");
+    }
+
+    return 0;
+}
+
+//*****************************************************************************
+//*****************************************************************************
 static int manage_register(const bevt_client_id_t id) {
     int r;
     bevt_relay_db_elem_t elem;
@@ -63,11 +84,17 @@ static int manage_register(const bevt_client_id_t id) {
     r = bevt_relay_db_check_reg(id);
     if(!r) {
         BEVT_DEBUG_LOG_INFO("register todo");
-        memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
-        elem.id = id;
-        elem.reg = 1;
-        bevt_relay_db_set_elem(&elem);
-        answer(0);
+        r = send_to_central(id, BEVT_RELAY_OP_REGISTER_FIRST);
+        if(!r) {
+            memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
+            elem.id = id;
+            elem.reg = 1;
+            bevt_relay_db_set_elem(&elem);
+            answer(0);
+        }
+        else {
+            answer(EALREADY);
+        }
     }
     else {
         BEVT_DEBUG_LOG_INFO("register already done");
@@ -172,13 +199,6 @@ int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context) {
     else {
         BEVT_DEBUG_LOG_INFO("unknown command");
         answer(ECANCELED);
-    }
-
-    if(0) {
-        bozmessage_t c = { .s = m->s, .len = m->len };
-        if (!bozmessage_put(&central_sender, &c)) {
-            BEVT_DEBUG_LOG_ERROR("unable to put to central");
-        }
     }
 
     if(!r) errno=0;
