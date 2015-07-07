@@ -58,7 +58,7 @@ extern "C"
  * @brief Messsage global type.
  */
 typedef struct {
-    uint64_t    rid;        /*!< Random identifier */
+    char        rid[8];     /*!< Random identifier */
     int         sfd;        /*!< signal fd */
     skaclient_t connection ;
     skaclient_buffer_t buffers ;
@@ -68,7 +68,7 @@ typedef struct {
  * @brief Messsage global type initializer.
  */
 #define BEVT_CLIENT_GLOB_ZERO {     \
-    .rid=0,                         \
+    .rid= { 0,0,0,0,0,0,0,0 } ,     \
     .sfd=-1,                        \
     .connection = SKACLIENT_ZERO,   \
 }

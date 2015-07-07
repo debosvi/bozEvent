@@ -44,9 +44,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //*****************************************************************************
 //*****************************************************************************
 int bevt_client_init(void) {
-    badrandom_init() ;
-    bevt_client_g.rid = badrandom_int(INT32_MAX);
-    badrandom_finish() ;
+    random_name(&bevt_client_g.rid[0], 8);
 
     bevt_client_g.sfd = selfpipe_init() ;
     if (bevt_client_g.sfd < 0) strerr_diefu1sys(111, "selfpipe_init") ;
@@ -58,7 +56,7 @@ int bevt_client_init(void) {
             strerr_diefu1sys(111, "trap signals") ;
     }
 
-    BEVT_DEBUG_LOG_INFO("rid(%lld)", (long long int)bevt_client_g.rid);
+    BEVT_DEBUG_LOG_INFO("rid(%s)", (long long int)bevt_client_g.rid);
     if(bevt_client_start_relay(0)<0)
         return -1;
 

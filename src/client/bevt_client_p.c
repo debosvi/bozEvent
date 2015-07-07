@@ -45,8 +45,7 @@ bevt_client_glob_t bevt_client_g = BEVT_CLIENT_GLOB_ZERO;
 //*****************************************************************************
 //*****************************************************************************
 int bevt_client_start_relay(int b) {
-    char rid_str[UINT64_FMT];
-    char const *cargv[3] = { BEVT_RELAY_PROG, &rid_str[0], 0 } ;
+    char const *cargv[3] = { BEVT_RELAY_PROG, &bevt_client_g.rid[0], 0 } ;
     char const *cenvp[2] = { 0, 0 } ;
     tain_t deadline;
 
@@ -54,7 +53,6 @@ int bevt_client_start_relay(int b) {
 
     tain_now_g();
     tain_addsec_g(&deadline, 1);
-    uint64_fmt(rid_str, bevt_client_g.rid);
 
     skaclient_startf_b_g(&bevt_client_g.connection, &bevt_client_g.buffers,
         cargv[0], cargv, cenvp,
