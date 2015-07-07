@@ -137,9 +137,9 @@ int bevt_relay_db_set_elem(bevt_relay_db_elem_t const * const elem) {
         }
         else {
             if(telem.reg != elem->reg) return bevt_relay_db_set_elem_upd_reg(elem->id, elem->reg);
-            if(telem.sub != elem->sub) return bevt_relay_db_set_elem_upd_sub(elem->id, elem->reg);
-            if(telem.nt < elem->nt) return bevt_relay_db_set_elem_upd_nt(elem->id, elem->reg);
-            if(telem.prio != elem->prio) return bevt_relay_db_set_elem_upd_prio(elem->id, elem->reg);
+            if(telem.sub != elem->sub) return bevt_relay_db_set_elem_upd_sub(elem->id, elem->sub);
+            if(telem.nt < elem->nt) return bevt_relay_db_set_elem_upd_nt(elem->id, elem->nt);
+            if(telem.prio != elem->prio) return bevt_relay_db_set_elem_upd_prio(elem->id, elem->prio);
             break;
         }
     }
