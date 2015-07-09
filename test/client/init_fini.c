@@ -24,6 +24,10 @@ int main(void) {
         if(ret<0)
             fprintf(stderr, "bevt_client_register failed 2, id(%d), errno(%d/%s)\n", i, errno, strerror(errno));
 
+        ret = bevt_client_subscribe(i, BEVT_CLIENT_PRIO_DEFAULT);
+        if(ret<0)
+            fprintf(stderr, "bevt_client_subscribe failed 1, id(%d), errno(%d/%s)\n", i, errno, strerror(errno));
+
         ret = bevt_client_unregister(i);
         if(ret<0)
             fprintf(stderr, "bevt_client_unregister failed 1, id(%d), errno(%d/%s)\n", i, errno, strerror(errno));
@@ -35,6 +39,11 @@ int main(void) {
         ret = bevt_client_register(i, BEVT_CLIENT_PRIO_DEFAULT);
         if(ret<0)
             fprintf(stderr, "bevt_client_register failed 2, id(%d), errno(%d/%s)\n", i, errno, strerror(errno));
+
+        ret = bevt_client_unsubscribe(i);
+        if(ret<0)
+            fprintf(stderr, "bevt_client_unsubscribe failed 1, id(%d), errno(%d/%s)\n", i, errno, strerror(errno));
+
         poll(0,0, -1);
         bevt_client_process(100);
     };

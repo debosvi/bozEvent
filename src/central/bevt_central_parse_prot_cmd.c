@@ -39,7 +39,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "bevt_central_p.h"
 #include "bevt_relay_p.h"
 
-static bevt_client_id_t last_id = 0;
+static bevt_client_id_t last_reg_id = 0;
+static bevt_client_id_t last_sub_id = 0;
 
 int bevt_central_parse_prot_cmd(bozmessage_t const *m, void *p) {
     char ret = 0;
@@ -51,8 +52,8 @@ int bevt_central_parse_prot_cmd(bozmessage_t const *m, void *p) {
     if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_REGISTER_FIRST], BEVT_RELAY_COMMAND_OP_LEN)) {
         uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("register command, id(%llu)", (long long unsigned int)id);
-        if(id!=last_id) {
-            last_id = id;
+        if(id!=last_reg_id) {
+            last_reg_id = id;
         }
         else {
             ret=EALREADY;
@@ -61,26 +62,32 @@ int bevt_central_parse_prot_cmd(bozmessage_t const *m, void *p) {
     else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_UNREGISTER], BEVT_RELAY_COMMAND_OP_LEN)) {
         uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("unregister command, id(%llu)", (long long unsigned int)id);
-        if(id==last_id) {
-            last_id = 0;
+        if(id==last_reg_id) {
+            last_reg_id = 0;
         }
         else {
             ret=EALREADY;
         }
-
-
     }
     else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_SUBSCRIBE_FIRST], BEVT_RELAY_COMMAND_OP_LEN)) {
         uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("subscribe command, id(%llu)", (long long unsigned int)id);
-
-
+        if(id!=last_sub_id) {
+            last_sub_id = id;
+        }
+        else {
+            ret=EALREADY;
+        }
     }
     else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_UNSUBSCRIBE], BEVT_RELAY_COMMAND_OP_LEN)) {
         uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("unsubscribe command, id(%llu)", (long long unsigned int)id);
-
-
+        if(id==last_sub_id) {
+            last_sub_id = 0;
+        }
+        else {
+            ret=EALREADY;
+        }
     }
     else {
         BEVT_DEBUG_LOG_INFO("unknown command");

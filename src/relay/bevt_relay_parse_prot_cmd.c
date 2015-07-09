@@ -97,7 +97,8 @@ static int manage_register(const bevt_client_id_t id) {
         BEVT_DEBUG_LOG_INFO("register todo");
         r = send_to_central(id, BEVT_RELAY_OP_REGISTER_FIRST);
         if(!r) {
-            memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
+            if(bevt_relay_db_get_elem(id, &elem))
+                memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
             elem.id = id;
             elem.reg = 1;
             bevt_relay_db_set_elem(&elem);
@@ -120,14 +121,21 @@ static int manage_subscribe(const bevt_client_id_t id) {
     int r;
     bevt_relay_db_elem_t elem;
 
-    r = bevt_relay_db_check_reg(id);
+    r = bevt_relay_db_check_sub(id);
     if(!r) {
         BEVT_DEBUG_LOG_INFO("subscribe todo");
-        memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
-        elem.id = id;
-        elem.sub = 1;
-        bevt_relay_db_set_elem(&elem);
-        answer(0);
+        r = send_to_central(id, BEVT_RELAY_OP_SUBSCRIBE_FIRST);
+        if(!r) {
+            if(bevt_relay_db_get_elem(id, &elem))
+                memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
+            elem.id = id;
+            elem.sub = 1;
+            bevt_relay_db_set_elem(&elem);
+            answer(0);
+        }
+        else {
+            answer(errno);
+        }
     }
     else {
         BEVT_DEBUG_LOG_INFO("subscribe already done");
@@ -148,7 +156,6 @@ static int manage_unregister(const bevt_client_id_t id) {
         BEVT_DEBUG_LOG_INFO("unregister todo");
         r = send_to_central(id, BEVT_RELAY_OP_UNREGISTER);
         if(!r) {
-            memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
             elem.id = id;
             elem.reg = 0;
             bevt_relay_db_set_elem(&elem);
@@ -175,9 +182,16 @@ static int manage_unsubscribe(const bevt_client_id_t id) {
     r = bevt_relay_db_get_elem(id, &elem);
     if(!r && elem.sub) {
         BEVT_DEBUG_LOG_INFO("unsubscribe todo");
-        elem.sub = 0;
-        bevt_relay_db_set_elem(&elem);
-        answer(0);
+        r = send_to_central(id, BEVT_RELAY_OP_UNSUBSCRIBE);
+        if(!r) {
+            elem.id = id;
+            elem.sub = 0;
+            bevt_relay_db_set_elem(&elem);
+            answer(0);
+        }
+        else {
+            answer(errno);
+        }
     }
     else {
         BEVT_DEBUG_LOG_INFO("unsubscribe failed");
