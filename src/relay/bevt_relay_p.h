@@ -50,8 +50,10 @@ extern "C"
 
 #include <skalibs/unixmessage.h>
 
-#include <bozCore/bozmessage.h>
+#include <bozCore/bozclient.h>
+
 #include "bevt_debug_p.h"
+#include "bevt_central_p.h"
 #include "bozEvent/bevt_client.h"
 
 #define BEVT_RELAY_PROG BEVT_PROG_PREFIX "bevt_relayd"
@@ -100,8 +102,9 @@ int main_socket_open(void);
 int main_socket_close(const int);
 
 extern sqlite3 *bevt_relayd_db_g;
-extern bozmessage_receiver_t central_receive;
-extern bozmessage_sender_t central_sender;
+
+extern bozclient_t central_client_g;
+extern bozclient_buffer_t central_client_data_g;
 
 /**
  *\}

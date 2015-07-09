@@ -44,3 +44,6 @@ const char* bevt_relay_commands[BEVT_RELAY_OP_NB] = {
     "-USUB---",
     "-NOT----",
     };
+
+bozclient_t central_client_g = BOZCLIENT_ZERO;
+bozclient_buffer_t central_client_data_g;

@@ -39,6 +39,7 @@ target_link_libraries(${BOZ_RELAY_APP}
     ${BOZ_RELAY_LIB}
     sqlite3
     bevt_debug
+    bozclient
     bozmessage
     skarnet
     )

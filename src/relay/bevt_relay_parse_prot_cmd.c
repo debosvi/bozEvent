@@ -57,19 +57,30 @@ static void answer(char c) {
 //*****************************************************************************
 //*****************************************************************************
 static int send_to_central(const bevt_client_id_t id, const bevt_relay_op_t op) {
+    int err;
     char fmt_id[8];
     siovec_t v[2] = { 
         { .s = (char*)bevt_relay_commands[op], .len = BEVT_RELAY_COMMAND_OP_LEN }, 
         { .s = &fmt_id[0], .len = 8}
     };
-    bozmessage_v_t c = { .v = &v[0], .vlen = 2 };
     uint64_pack(&fmt_id[0], id);
 
-    if (!bozmessage_putv(&central_sender, &c)) {
+    if (!bozclient_putv(&central_client_g, v, 2, bozclient_default_cb, &err)) {
         BEVT_DEBUG_LOG_ERROR("unable to put to central");
     }
-    else if(!bozmessage_sender_flush(&central_sender)) {
-        BEVT_DEBUG_LOG_ERROR("unable to send to central");
+    else {
+        tain_t deadline;
+        tain_now_g();
+        tain_addsec_g(&deadline, 1);
+
+        if(!bozclient_syncify(&central_client_g, &deadline, &STAMP)) {
+            BEVT_DEBUG_LOG_ERROR("unable to send to central");
+        }   
+        else {
+            BEVT_DEBUG_LOG_ERROR("central acks with (%d/%s)", err, strerror(err));
+
+        }
+        
     }
 
     return 0;
@@ -135,9 +146,17 @@ static int manage_unregister(const bevt_client_id_t id) {
     r = bevt_relay_db_get_elem(id, &elem);
     if(!r && elem.reg) {
         BEVT_DEBUG_LOG_INFO("unregister todo");
-        elem.reg = 0;
-        bevt_relay_db_set_elem(&elem);
-        answer(0);
+        r = send_to_central(id, BEVT_RELAY_OP_UNREGISTER);
+        if(!r) {
+            memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
+            elem.id = id;
+            elem.reg = 0;
+            bevt_relay_db_set_elem(&elem);
+            answer(0);
+        }
+        else {
+            answer(EALREADY);
+        }
     }
     else {
         BEVT_DEBUG_LOG_INFO("unregister failed");

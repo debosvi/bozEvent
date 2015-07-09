@@ -55,10 +55,13 @@ static bevt_central_rconns_t relay_conns;
 
 static int handle_close(bevt_central_conn_t *p) {
     boztree_free(&p->t);
-    fd_close(bozmessage_receiver_fd(&p->r));
+    fd_close(bozmessage_receiver_fd(&p->in));
+    //fd_close(bozmessage_sender_fd(&p->out));
+    //fd_close(bozmessage_sender_fd(&p->asyncout));
     free(p->d);
-    bozmessage_receiver_free(&p->r);  
-    bozmessage_sender_free(&p->s);  
+    bozmessage_receiver_free(&p->in);  
+    bozmessage_sender_free(&p->out);  
+    bozmessage_sender_free(&p->asyncout);  
     return (errno=0, 0);
 }
 
@@ -84,10 +87,22 @@ static int handle_accept(const int fd) {
         }
         bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i);
         BOZTREE_INIT(&p->t, bevt_central_storage_t);
-        char *d = malloc(BEVT_MAX_DATA_SIZE);
-        p->d = d;
-        bozmessage_receiver_init(&p->r, r, d, BEVT_MAX_DATA_SIZE);  
-        bozmessage_sender_init(&p->s, 16*BEVT_MAX_DATA_SIZE);  
+        {
+            char *d = malloc(BEVT_MAX_DATA_SIZE);
+            p->d = d;
+            bozmessage_receiver_init(&p->in, r, d, BEVT_MAX_DATA_SIZE);  
+        }
+        bozmessage_sender_init(&p->out, r);  
+        bozmessage_sender_init(&p->asyncout, r);  
+        {
+            tain_t deadline;
+            tain_now_g();
+            tain_addsec_g(&deadline, 1);
+            bozclient_server_init (&p->in, &p->out, &p->asyncout, 
+                    BEVT_CENTRAL_BANNER1, BEVT_CENTRAL_BANNER1_LEN,
+                    BEVT_CENTRAL_BANNER2, BEVT_CENTRAL_BANNER2_LEN,
+                    &deadline, &STAMP);
+        }
     }
     return r;
 }
@@ -177,7 +192,7 @@ int main (int argc, char const *const *argv) {
         for(; i<n; i++) {
             bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i);
             p->xindex = 2+i;
-            x[2+i].fd = bozmessage_receiver_fd(&p->r);
+            x[2+i].fd = bozmessage_receiver_fd(&p->in);
             x[2+i].events = IOPAUSE_READ;
         }
 
@@ -196,7 +211,7 @@ int main (int argc, char const *const *argv) {
         for (i=0 ; i<n; i++) {
             register bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i) ;
             if (x[p->xindex].revents & IOPAUSE_READ) {
-                register int rr = bozmessage_handle(&p->r, bevt_central_parse_prot_cmd, 0) ;
+                register int rr = bozmessage_handle(&p->in, bevt_central_parse_prot_cmd, &p->out) ;
                 if (!rr) continue ;
                 if (rr < 0) {
                     handle_close(p) ;

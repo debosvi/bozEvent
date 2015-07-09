@@ -49,11 +49,16 @@ extern "C"
 #include <skalibs/genset.h>
 #include <skalibs/uint64.h>
 
-#include <bozCore/bozmessage.h>
+#include <bozCore/bozclient.h>
 #include <bozCore/boztree.h>
 
 #include <bozEvent/bevt_client.h>
 #include "bevt_debug_p.h"
+
+#define BEVT_CENTRAL_BANNER1 "bevtcentral v1.0 (b)\n"
+#define BEVT_CENTRAL_BANNER1_LEN (sizeof BEVT_CENTRAL_BANNER1 - 1)
+#define BEVT_CENTRAL_BANNER2 "bevtcentral v1.0 (a)\n"
+#define BEVT_CENTRAL_BANNER2_LEN (sizeof BEVT_CENTRAL_BANNER2 - 1)
 
 typedef struct {
     uint64          nc;     /*!< notified count */ 
@@ -61,8 +66,9 @@ typedef struct {
 } bevt_central_storage_t;
 
 typedef struct {
-    bozmessage_receiver_t   r;          /*!< receiver of messages */
-    bozmessage_sender_t     s;          /*!< sender of message */
+    bozmessage_receiver_t   in;         /*!< receiver of messages */
+    bozmessage_sender_t     out;        /*!< sender of message */
+    bozmessage_sender_t     asyncout;   /*!< sender of message */
     boztree_t               t;          /*!< link to registered/subscribed ids */
     unsigned int            xindex;     /*!< poll reverse index */
     char*                   d;          /*!< receiver data buffer */
