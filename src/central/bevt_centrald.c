@@ -56,8 +56,8 @@ static bevt_central_rconns_t relay_conns;
 static int handle_close(bevt_central_conn_t *p) {
     boztree_free(&p->t);
     fd_close(bozmessage_receiver_fd(&p->in));
-    //fd_close(bozmessage_sender_fd(&p->out));
-    //fd_close(bozmessage_sender_fd(&p->asyncout));
+    //same fd as receiver: fd_close(bozmessage_sender_fd(&p->out));
+    //same fd as receiver: fd_close(bozmessage_sender_fd(&p->asyncout));
     free(p->d);
     bozmessage_receiver_free(&p->in);  
     bozmessage_sender_free(&p->out);  
@@ -211,7 +211,7 @@ int main (int argc, char const *const *argv) {
         for (i=0 ; i<n; i++) {
             register bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i) ;
             if (x[p->xindex].revents & IOPAUSE_READ) {
-                register int rr = bozmessage_handle(&p->in, bevt_central_parse_prot_cmd, &p->out) ;
+                register int rr = bozmessage_handle(&p->in, bevt_central_parse_prot_cmd, p) ;
                 if (!rr) continue ;
                 if (rr < 0) {
                     handle_close(p) ;

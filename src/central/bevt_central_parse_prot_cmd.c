@@ -39,55 +39,116 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "bevt_central_p.h"
 #include "bevt_relay_p.h"
 
-static bevt_client_id_t last_reg_id = 0;
-static bevt_client_id_t last_sub_id = 0;
+//*****************************************************************************
+//*****************************************************************************
+static int manage_register(const bevt_client_id_t id, boztree_t *t) {
+    int ret = 0;
+    bevt_central_storage_t* data = boztree_data(t, id);
+    if(!data) {
+        bevt_central_storage_t e = BEVT_CENTRAL_STORAGE_ID_INIT(id);
+        e.rs |= BEVT_CENTRAL_STORAGE_REG_FLAG;
+        boztree_insert(t, (boztree_id_t*)&e);            
+    }
+    else {
+        if(data->rs & BEVT_CENTRAL_STORAGE_REG_FLAG)
+            ret = EALREADY;
+        else data->rs |= BEVT_CENTRAL_STORAGE_REG_FLAG; 
+    
+        BEVT_DEBUG_LOG_INFO("%s: rs(%02x)", __PRETTY_FUNCTION__, data->rs);
+    }
 
+    return ret;
+}
+
+//*****************************************************************************
+//*****************************************************************************
+static int manage_unregister(const bevt_client_id_t id, boztree_t *t) {
+    int ret = 0;
+    bevt_central_storage_t* data = boztree_data(t, id);
+    if(!data) {
+        bevt_central_storage_t e = BEVT_CENTRAL_STORAGE_ID_INIT(id);
+        boztree_insert(t, (boztree_id_t*)&e);            
+    }
+    else {
+        if(!(data->rs & BEVT_CENTRAL_STORAGE_REG_FLAG))
+            ret = EALREADY;
+        else data->rs ^= BEVT_CENTRAL_STORAGE_REG_FLAG;
+
+        BEVT_DEBUG_LOG_INFO("%s: rs(%02x)", __PRETTY_FUNCTION__, data->rs);
+    }
+
+    return ret;
+}
+
+//*****************************************************************************
+//*****************************************************************************
+static int manage_subscribe(const bevt_client_id_t id, boztree_t *t) {
+    int ret = 0;
+    bevt_central_storage_t* data = boztree_data(t, id);
+    if(!data) {
+        bevt_central_storage_t e = BEVT_CENTRAL_STORAGE_ID_INIT(id);
+        e.rs |= BEVT_CENTRAL_STORAGE_SUB_FLAG;
+        boztree_insert(t, (boztree_id_t*)&e);            
+    }
+    else {
+        if(data->rs & BEVT_CENTRAL_STORAGE_SUB_FLAG)
+            ret = EALREADY;
+        else data->rs |= BEVT_CENTRAL_STORAGE_SUB_FLAG; 
+
+        BEVT_DEBUG_LOG_INFO("%s: rs(%02x)", __PRETTY_FUNCTION__, data->rs);
+    }
+
+    return ret;
+}
+
+//*****************************************************************************
+//*****************************************************************************
+static int manage_unsubscribe(const bevt_client_id_t id, boztree_t *t) {
+    int ret = 0;
+    bevt_central_storage_t* data = boztree_data(t, id);
+    if(!data) {
+        bevt_central_storage_t e = BEVT_CENTRAL_STORAGE_ID_INIT(id);
+        boztree_insert(t, (boztree_id_t*)&e);            
+    }
+    else {
+        if(!(data->rs & BEVT_CENTRAL_STORAGE_SUB_FLAG))
+            ret = EALREADY;
+        else data->rs ^= BEVT_CENTRAL_STORAGE_SUB_FLAG;
+    
+        BEVT_DEBUG_LOG_INFO("%s: rs(%02x)", __PRETTY_FUNCTION__, data->rs);
+    }
+
+    return ret;
+}
+
+//*****************************************************************************
+//*****************************************************************************
 int bevt_central_parse_prot_cmd(bozmessage_t const *m, void *p) {
     char ret = 0;
     bevt_client_id_t id;
-    bozmessage_sender_t* s = (bozmessage_sender_t*)p;
+    bevt_central_conn_t* c = (bevt_central_conn_t*)p;
 
     BEVT_DEBUG_LOG_INFO("message received, len(%d)", m->len);
 
     if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_REGISTER_FIRST], BEVT_RELAY_COMMAND_OP_LEN)) {
         uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("register command, id(%llu)", (long long unsigned int)id);
-        if(id!=last_reg_id) {
-            last_reg_id = id;
-        }
-        else {
-            ret=EALREADY;
-        }
+        ret = manage_register(id, &c->t);
     }
     else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_UNREGISTER], BEVT_RELAY_COMMAND_OP_LEN)) {
         uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("unregister command, id(%llu)", (long long unsigned int)id);
-        if(id==last_reg_id) {
-            last_reg_id = 0;
-        }
-        else {
-            ret=EALREADY;
-        }
+        ret = manage_unregister(id, &c->t);
     }
     else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_SUBSCRIBE_FIRST], BEVT_RELAY_COMMAND_OP_LEN)) {
         uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("subscribe command, id(%llu)", (long long unsigned int)id);
-        if(id!=last_sub_id) {
-            last_sub_id = id;
-        }
-        else {
-            ret=EALREADY;
-        }
+        ret = manage_subscribe(id, &c->t);
     }
     else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_UNSUBSCRIBE], BEVT_RELAY_COMMAND_OP_LEN)) {
         uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("unsubscribe command, id(%llu)", (long long unsigned int)id);
-        if(id==last_sub_id) {
-            last_sub_id = 0;
-        }
-        else {
-            ret=EALREADY;
-        }
+        ret = manage_unsubscribe(id, &c->t);
     }
     else {
         BEVT_DEBUG_LOG_INFO("unknown command");
@@ -96,8 +157,8 @@ int bevt_central_parse_prot_cmd(bozmessage_t const *m, void *p) {
 
     {
         bozmessage_t e = { .s = &ret, .len = 1 };
-        bozmessage_put(s, &e);
-        bozmessage_sender_flush(s);
+        bozmessage_put(&c->out, &e);
+        bozmessage_sender_flush(&c->out);
     }
     return 1;
 }

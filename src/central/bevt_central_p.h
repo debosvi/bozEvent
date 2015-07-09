@@ -60,10 +60,15 @@ extern "C"
 #define BEVT_CENTRAL_BANNER2 "bevtcentral v1.0 (a)\n"
 #define BEVT_CENTRAL_BANNER2_LEN (sizeof BEVT_CENTRAL_BANNER2 - 1)
 
+#define BEVT_CENTRAL_STORAGE_REG_FLAG   (0x01)
+#define BEVT_CENTRAL_STORAGE_SUB_FLAG   (0x10)
+
 typedef struct {
+    uint64          id;     /*!< identifier */ 
     uint64          nc;     /*!< notified count */ 
     unsigned char   rs;     /*!< registered/subscribed status */
 } bevt_central_storage_t;
+#define BEVT_CENTRAL_STORAGE_ID_INIT(id) { .id = id, .nc = 0, .rs = 0 }
 
 typedef struct {
     bozmessage_receiver_t   in;         /*!< receiver of messages */
