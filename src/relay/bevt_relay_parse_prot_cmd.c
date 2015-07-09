@@ -78,12 +78,12 @@ static int send_to_central(const bevt_client_id_t id, const bevt_relay_op_t op) 
         }   
         else {
             BEVT_DEBUG_LOG_ERROR("central acks with (%d/%s)", err, strerror(err));
-
+            if(err) return (errno=err,-1);
         }
         
     }
 
-    return 0;
+    return (errno=0,0);
 }
 
 //*****************************************************************************
@@ -104,7 +104,7 @@ static int manage_register(const bevt_client_id_t id) {
             answer(0);
         }
         else {
-            answer(EALREADY);
+            answer(errno);
         }
     }
     else {
@@ -155,7 +155,7 @@ static int manage_unregister(const bevt_client_id_t id) {
             answer(0);
         }
         else {
-            answer(EALREADY);
+            answer(errno);
         }
     }
     else {
