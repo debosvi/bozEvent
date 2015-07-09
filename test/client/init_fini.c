@@ -44,7 +44,7 @@ int main(void) {
         if(ret<0)
             fprintf(stderr, "bevt_client_unsubscribe failed 1, id(%d), errno(%d/%s)\n", i, errno, strerror(errno));
 
-        poll(0,0, -1);
+        poll(0,0, 100);
         bevt_client_process(100);
     };
 

@@ -44,6 +44,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <skalibs/tai.h>
 #include <skalibs/djbunix.h>
 #include <skalibs/iopause.h>
+#include <skalibs/skamisc.h>
 
 #include "bevt_central_p.h"
 
@@ -74,6 +75,7 @@ static void cleanup (void) {
     }
 
     main_socket_close(mfd);
+    stralloc_free(&satmp);
 }
 
 static int handle_accept(const int fd) {
