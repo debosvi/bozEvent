@@ -6,6 +6,7 @@
 #include <poll.h>
 #include <errno.h>
 
+#include "skalibs/skamisc.h"
 #include "bevt_relay_p.h"
 
 int main(void) {
@@ -17,7 +18,7 @@ int main(void) {
         fprintf(stderr, "bevt_relay_db_init failed, errno(%d/%s)\n", errno, strerror(errno));
 
 
-    while(i++<(10*60)) {
+    while(i++<(6)) {
         fprintf(stderr, "\nLOOP\n");
         ret=bevt_relay_db_get_elem(i, &elem);
         if(ret<0)
@@ -70,5 +71,6 @@ int main(void) {
     if(ret)
         fprintf(stderr, "bevt_relay_db_close failed, errno(%d/%s)\n", errno, strerror(errno));
 
+    stralloc_free(&satmp);
     exit(EXIT_SUCCESS);
 }
