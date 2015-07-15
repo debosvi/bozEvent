@@ -39,56 +39,35 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <skalibs/environ.h>
 #include <skalibs/env.h>
-#include <skalibs/djbunix.h>
 
 #include "bevt_relay_p.h"
 
 int bevt_relay_db_init(char const *db_name) {
-    int ret=0, r;
+    int ret=0;
     char const * restart;
-    stralloc sa_db = STRALLOC_ZERO;
-    stralloc sa_sql = STRALLOC_ZERO;
-    stralloc sa_sql2 = STRALLOC_ZERO;
 
     restart = env_get("BEVT_RELAY_RESTART");
-    stralloc_cats(&sa_db, "/tmp/boz/bevt/");
-    stralloc_cats(&sa_db, db_name);
-    stralloc_cats(&sa_db, ".db");
+    stralloc_cats(&bevt_realy_db_name_g, "/tmp/boz/bevt/");
+    stralloc_cats(&bevt_realy_db_name_g, db_name);
 
     if(!restart) {
         BEVT_DEBUG_LOG_INFO("db init on (%s)", db_name);
-        rm_rf(sa_db.s);
+        rm_rf(bevt_realy_db_name_g.s);
     }
     else {
         BEVT_DEBUG_LOG_INFO("reuse db (%s)", db_name);
     }
 
-    stralloc_0(&sa_db);
-    r = mkdir (sa_db.s, 0777);
-    if(!r) {
-        BEVT_DEBUG_LOG_ERROR("db open failed (%s), errno (%d/%s)", sa_db.s, errno, strerror(errno));
-        ret=-1;
-        goto exit;
-    }
-
     if(!restart) {
-        stralloc_cats(&sa_sql, SCRIPT_INSTALL_DIR);
-        stralloc_cats(&sa_sql, "/bevt_relayd_dbcreate.sql");
-        openreadclose(sa_sql.s, &sa_sql2, 0);
-/*
-        r = sqlite3_exec(bevt_relayd_db_g, sa_sql2.s, 0, 0, 0); 
-        if(r != SQLITE_OK) {
-            BEVT_DEBUG_LOG_ERROR("db create failed (%s), msg(%s)", sa_db.s, sqlite3_errmsg(bevt_relayd_db_g));
+        stralloc first = STRALLOC_ZERO;
+        stralloc_cats(&first, "#id:reg:sub:prio:notify\n");
+        if(!openwritenclose(bevt_realy_db_name_g.s, first.s, first.len)) {
+            BEVT_DEBUG_LOG_ERROR("db init on (%s) failed, errno(%d/%s)", db_name, errno, strerror(errno));
             ret=-1;
-            goto exit;
         }
-*/
+        stralloc_free(&first);
     }
 
-exit:
-    stralloc_free(&sa_db);
-    stralloc_free(&sa_sql);
-    stralloc_free(&sa_sql2);
     if(!ret) errno=0;
     return ret;
 }
