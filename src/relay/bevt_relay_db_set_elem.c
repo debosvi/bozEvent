@@ -60,7 +60,8 @@ static void remove_line(stralloc *sa, const bevt_client_id_t id) {
             if(u==id) {
                 if(p) {
                     len = p+1-base;
-                    memcpy(base, base+len, (sa->s+sa->len)-(base+len));
+                    unsigned int s = (sa->s+sa->len)-(base+len);
+                    memmove(base, p+1, s);
                 }                
                 else len = (sa->s+sa->len)+1 - base;
                 sa->len-=len;
@@ -78,7 +79,9 @@ static void remove_line(stralloc *sa, const bevt_client_id_t id) {
 static void prepare_line(stralloc *sa, bevt_relay_db_elem_t const * const elem) {
     int len=0;
 
-    stralloc_readyplus(sa, 64);
+    sa->len=0;
+    stralloc_ready(sa, 64);
+    memset(sa->s, 0, sa->a);
     len = uint64_fmt(&sa->s[sa->len], elem->id);
     sa->len += len;
     stralloc_append(sa, ':');
@@ -104,6 +107,7 @@ int bevt_relay_db_set_elem(bevt_relay_db_elem_t const * const elem) {
     if(!elem->id) return (errno=EINVAL,-1);
 
     if(openreadclose(bevt_relay_db_name_g.s, &data, 0)<0 ) return -1;
+    data.s[data.len]=0;
 
     while (1) {
         ret = bevt_relay_db_get_elem(elem->id, &telem);
@@ -113,7 +117,6 @@ int bevt_relay_db_set_elem(bevt_relay_db_elem_t const * const elem) {
             prepare_line(&aux, &telem);
             stralloc_cat(&data, &aux);
             openwritenclose(bevt_relay_db_name_g.s, data.s, data.len);
-            stralloc_0(&aux);
             continue;
         }
         else {

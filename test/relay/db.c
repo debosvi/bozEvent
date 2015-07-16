@@ -43,6 +43,7 @@ int main(void) {
             fprintf(stderr, "bevt_relay_db_check_reg: SUCCESS\n");
         }
 
+        elem.id=i;
         elem.reg^=0x01;
         ret=bevt_relay_db_set_elem(&elem);
         if(ret<0)
