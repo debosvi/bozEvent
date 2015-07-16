@@ -37,31 +37,102 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "bevt_relay_p.h"
 
+//******************************************************************************
+//******************************************************************************
+static void remove_line(stralloc *sa, const bevt_client_id_t id) {
+    uint64 u;
+    char aux[64];
+    register char *base;
+    int len;
+
+    base = sa->s;
+    while(1) {
+        char *p;
+
+        memset(aux, 0, 64);
+        snprintf(aux, 64, "%s", base);
+        p = strchr(base, 0x0a);
+
+        if(strlen(aux) && aux[0]!='#') {
+            char *pp = strchr(aux, ':');
+            *pp = 0;
+            uint64_scan(aux, &u);
+            if(u==id) {
+                if(p) {
+                    len = p+1-base;
+                    memcpy(base, base+len, (sa->s+sa->len)-(base+len));
+                }                
+                else len = (sa->s+sa->len)+1 - base;
+                sa->len-=len;
+                sa->s[sa->len]=0;
+                continue;
+            }
+        }
+        if(!p) break;
+        base = p+1;
+    }
+}
+
+//******************************************************************************
+//******************************************************************************
+static void prepare_line(stralloc *sa, bevt_relay_db_elem_t const * const elem) {
+    int len=0;
+
+    stralloc_readyplus(sa, 64);
+    len = uint64_fmt(&sa->s[sa->len], elem->id);
+    sa->len += len;
+    stralloc_append(sa, ':');
+    sa->s[sa->len++] = (elem->reg?'1':'0');
+    stralloc_append(sa, ':');
+    sa->s[sa->len++] = (elem->sub?'1':'0');
+    stralloc_append(sa, ':');
+    sa->s[sa->len++] = '0' + elem->prio;
+    stralloc_append(sa, ':');
+    len = uint64_fmt(&sa->s[sa->len], elem->nt);
+    sa->len += len;
+    stralloc_append(sa, '\n');
+}
+
+//******************************************************************************
+//******************************************************************************
 int bevt_relay_db_set_elem(bevt_relay_db_elem_t const * const elem) {
-    int r;
+    int ret, updt=0;
+    stralloc data = STRALLOC_ZERO;
+    stralloc aux = STRALLOC_ZERO;
     bevt_relay_db_elem_t telem;
 
-    if(!elem->id) return (errno=EINVAL, -1);
+    if(!elem->id) return (errno=EINVAL,-1);
+
+    if(openreadclose(bevt_relay_db_name_g.s, &data, 0)<0 ) return -1;
 
     while (1) {
-        r = bevt_relay_db_get_elem(elem->id, &telem);
-        if(r<0) {
+        ret = bevt_relay_db_get_elem(elem->id, &telem);
+        if(ret<0) {
             /* cretae elem */
             telem.id = elem->id;
-//            r = bevt_relay_db_set_elem_new(&telem);
-            if(r<0) break;
+            prepare_line(&aux, &telem);
+            stralloc_cat(&data, &aux);
+            openwritenclose(bevt_relay_db_name_g.s, data.s, data.len);
+            stralloc_0(&aux);
             continue;
         }
         else {
-/*
-            if(telem.reg != elem->reg) return bevt_relay_db_set_elem_upd_reg(elem->id, elem->reg);
-            if(telem.sub != elem->sub) return bevt_relay_db_set_elem_upd_sub(elem->id, elem->sub);
-            if(telem.nt < elem->nt) return bevt_relay_db_set_elem_upd_nt(elem->id, elem->nt);
-            if(telem.prio != elem->prio) return bevt_relay_db_set_elem_upd_prio(elem->id, elem->prio);
-*/
+            if(telem.reg != elem->reg)      { telem.reg  = elem->reg;  updt++; }
+            if(telem.sub != elem->sub)      { telem.sub  = elem->sub;  updt++; }
+            if(telem.nt < elem->nt)         { telem.nt   = elem->nt;   updt++; }
+            if(telem.prio != elem->prio)    { telem.prio = elem->prio; updt++; }
+            if(updt) {
+                prepare_line(&aux, &telem);
+                remove_line(&data, elem->id);
+                stralloc_cat(&data, &aux);
+                openwritenclose(bevt_relay_db_name_g.s, data.s, data.len);
+            }   
             break;
         }
     }
 
-    return (errno=0,r);
+    stralloc_free(&data);
+    stralloc_free(&aux);
+    if(!ret) errno=0;
+    return ret;
 }

@@ -45,4 +45,4 @@ const char* bevt_relay_commands[BEVT_RELAY_OP_NB] = {
     "-NOT----",
     };
 
-stralloc bevt_realy_db_name_g = STRALLOC_ZERO;
+stralloc bevt_relay_db_name_g = STRALLOC_ZERO;

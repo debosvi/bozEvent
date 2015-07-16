@@ -90,7 +90,7 @@ typedef struct {
     unsigned char   prio;
 } bevt_relay_db_elem_t;
 
-extern stralloc bevt_realy_db_name_g;
+extern stralloc bevt_relay_db_name_g;
 extern int bevt_relay_db_get_elem(const bevt_client_id_t, bevt_relay_db_elem_t* const);
 extern int bevt_relay_db_set_elem(bevt_relay_db_elem_t const * const);
 extern int bevt_relay_db_check_reg(const bevt_client_id_t);

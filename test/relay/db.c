@@ -18,8 +18,8 @@ int main(void) {
         fprintf(stderr, "bevt_relay_db_init failed, errno(%d/%s)\n", errno, strerror(errno));
 
 
-    while(i++<(6)) {
-        fprintf(stderr, "\nLOOP\n");
+    while(i++<(10*60)) {
+        fprintf(stderr, "\nLOOP %d\n", i);
         ret=bevt_relay_db_get_elem(i, &elem);
         if(ret<0)
             fprintf(stderr, "bevt_relay_db_get_elem: FAILURE\n");
@@ -38,22 +38,17 @@ int main(void) {
             fprintf(stderr, "bevt_relay_db_check_reg: FAILURE\n");
         else if(!ret) {
             fprintf(stderr, "bevt_relay_db_check_reg: NOK\n");
-            elem.id = i;
-            ret=bevt_relay_db_set_elem(&elem);
-            if(ret<0)
-                fprintf(stderr, "bevt_relay_db_ste_elem: FAILURE\n");
-            else
-                fprintf(stderr, "bevt_relay_db_ste_elem: SUCCESS\n");
         }
         else {
             fprintf(stderr, "bevt_relay_db_check_reg: SUCCESS\n");
-            elem.reg=~elem.reg;
-            ret=bevt_relay_db_set_elem(&elem);
-            if(ret<0)
-                fprintf(stderr, "bevt_relay_db_ste_elem: FAILURE\n");
-            else
-                fprintf(stderr, "bevt_relay_db_ste_elem: SUCCESS\n");
         }
+
+        elem.reg^=0x01;
+        ret=bevt_relay_db_set_elem(&elem);
+        if(ret<0)
+            fprintf(stderr, "bevt_relay_db_set_elem: FAILURE\n");
+        else
+            fprintf(stderr, "bevt_relay_db_set_elem: SUCCESS\n");
 
         ret=bevt_relay_db_check_sub(i);
 
@@ -64,7 +59,7 @@ int main(void) {
         else
             fprintf(stderr, "bevt_relay_db_check_sub: SUCCESS\n");
         //bevt_client_process(100);
-        poll(0,0, 1000);
+        //poll(0,0, 1000);
     };
 
     ret=bevt_relay_db_close();

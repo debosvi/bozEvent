@@ -43,6 +43,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 int bevt_relay_db_close(void) {
-    stralloc_free(&bevt_realy_db_name_g);
+    stralloc_free(&bevt_relay_db_name_g);
     return 0;
 }

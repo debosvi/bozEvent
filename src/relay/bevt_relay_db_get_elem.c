@@ -42,7 +42,7 @@ static int parse_line(const bevt_client_id_t id, const char * const s, bevt_rela
     register char *base;
     uint64 u;
     int i;
-    BEVT_DEBUG_LOG_INFO("%s: string (%s)", __PRETTY_FUNCTION__, s);
+
     if(s[0]=='#') return 0;
 
     base = (char*)s;
@@ -87,10 +87,9 @@ int bevt_relay_db_get_elem(const bevt_client_id_t id, bevt_relay_db_elem_t* cons
 
     if(!id) { errno=ENOENT; ret=-1; goto exit; }
 
-    if(openreadclose(bevt_realy_db_name_g.s, &data, 0)<0 ) { ret=-1; goto exit; }
+    if(openreadclose(bevt_relay_db_name_g.s, &data, 0)<0 ) { ret=-1; goto exit; }
 
     base = data.s;
-    BEVT_DEBUG_LOG_INFO("db data (%s)", base);
     while(1) {
         char *p = strchr(base, 0x0a);
         if(p) (*p) = 0;

@@ -47,12 +47,12 @@ int bevt_relay_db_init(char const *db_name) {
     char const * restart;
 
     restart = env_get("BEVT_RELAY_RESTART");
-    stralloc_cats(&bevt_realy_db_name_g, "/tmp/boz/bevt/");
-    stralloc_cats(&bevt_realy_db_name_g, db_name);
+    stralloc_cats(&bevt_relay_db_name_g, "/tmp/boz/bevt/");
+    stralloc_cats(&bevt_relay_db_name_g, db_name);
 
     if(!restart) {
         BEVT_DEBUG_LOG_INFO("db init on (%s)", db_name);
-        rm_rf(bevt_realy_db_name_g.s);
+        rm_rf(bevt_relay_db_name_g.s);
     }
     else {
         BEVT_DEBUG_LOG_INFO("reuse db (%s)", db_name);
@@ -61,7 +61,7 @@ int bevt_relay_db_init(char const *db_name) {
     if(!restart) {
         stralloc first = STRALLOC_ZERO;
         stralloc_cats(&first, "#id:reg:sub:prio:notify\n");
-        if(!openwritenclose(bevt_realy_db_name_g.s, first.s, first.len)) {
+        if(!openwritenclose(bevt_relay_db_name_g.s, first.s, first.len)) {
             BEVT_DEBUG_LOG_ERROR("db init on (%s) failed, errno(%d/%s)", db_name, errno, strerror(errno));
             ret=-1;
         }
