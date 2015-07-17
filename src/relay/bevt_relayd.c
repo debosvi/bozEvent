@@ -144,7 +144,7 @@ int main (int argc, char const *const *argv) {
         x[1].fd = 1 ; x[1].events = IOPAUSE_EXCEPT | (unixmessage_sender_isempty(unixmessage_sender_1) ? 0 : IOPAUSE_WRITE ) ;
         x[2].fd = sfd ; x[2].events = IOPAUSE_READ ;
         x[3].fd = bozclient_sfd(&central_client_g); x[3].events = IOPAUSE_READ ;
-        x[4].fd = bozclient_sfd(&central_client_g); x[4].events = (bozclient_siswritable(&central_client_g) ? 0 : IOPAUSE_WRITE ) ;
+        x[4].fd = bozclient_sfd(&central_client_g); x[4].events = (bozclient_siswritable(&central_client_g) ? IOPAUSE_WRITE : 0) ;
 
         r = iopause_g(x, 5 + n, &deadline) ;
         if (r < 0) {
