@@ -1,10 +1,4 @@
 
-# install scripts and specific stuffs
-install(FILES bevt_relayd_dbcreate.sql 
-    DESTINATION ${SCRIPT_INSTALL_DIR}
-    PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
-    )
-
 # build targets
 set(BOZ_RELAY_LIB bevt_relay)
 
