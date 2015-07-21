@@ -66,7 +66,7 @@ int bevt_client_subscribe(const bevt_client_id_t id, const bevt_client_prio_t pr
         uint16_pack_big(&fmt_prio[0], prio);
         tain_now_g();
         tain_addsec_g(&deadline, 1);
-        r = skaclient_sendv (&bevt_client_g.connection, &v[0], 2, &skaclient_default_cb, &err, &deadline, &STAMP);    
+        r = skaclient_sendv (&bevt_client_g.connection, &v[0], 3, &skaclient_default_cb, &err, &deadline, &STAMP);    
         if(!r || err) {
             BEVT_DEBUG_LOG_ERROR("send command to relay failed");
             if(err) errno=err;

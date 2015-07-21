@@ -59,8 +59,8 @@ int bevt_client_subscribe_update(const bevt_client_id_t id, const bevt_client_pr
         char fmt_prio[2];
         siovec_t v[3] = { 
             { .s = (char*)bevt_relay_commands[BEVT_RELAY_OP_SUBSCRIBE_UPDATE], .len = BEVT_RELAY_COMMAND_OP_LEN }, 
-            { .s = &fmt_id[0], .len = 8},
-            { .s = &fmt_prio[0], .len = 1} 
+            { .s = &fmt_id[0], .len = 8 },
+            { .s = &fmt_prio[0], .len = 2 } 
         };
         uint64_pack_big(&fmt_id[0], id);
         uint16_pack_big(&fmt_prio[0], prio);
