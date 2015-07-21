@@ -61,8 +61,9 @@ int bevt_client_unsubscribe(const bevt_client_id_t id) {
         tain_now_g();
         tain_addsec_g(&deadline, 1);
         r = skaclient_sendv (&bevt_client_g.connection, &v[0], 2, &skaclient_default_cb, &err, &deadline, &STAMP);    
-        if(!r) {
+        if(!r || err) {
             BEVT_DEBUG_LOG_ERROR("send command to relay failed");
+            if(err) errno=err;
             return -1;
         } 
     }

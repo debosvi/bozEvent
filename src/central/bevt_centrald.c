@@ -52,7 +52,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define X() strerr_dief1x(101, "internal inconsistency, please submit a bug-report.")
 
 static int mfd=-1;
-static bevt_central_rconns_t relay_conns;
+bevt_central_rconns_t bevt_relay_conns;
 
 static int handle_close(bevt_central_conn_t *p) {
     boztree_free(&p->t);
@@ -67,10 +67,10 @@ static int handle_close(bevt_central_conn_t *p) {
 }
 
 static void cleanup (void) {
-    register int i=0, n=gensetb_n(&relay_conns);
+    register int i=0, n=gensetb_n(&bevt_relay_conns);
     
     for(; i<n; i++) {
-        bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i);
+        bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &bevt_relay_conns, i);
         handle_close(p);
     }
 
@@ -82,12 +82,12 @@ static int handle_accept(const int fd) {
     int r = main_socket_accept(fd);
     if(r<0) strerr_warnwu1x("unable to accept new connection");
     else {
-        register int i = gensetb_new(&relay_conns);
+        register int i = gensetb_new(&bevt_relay_conns);
         if(i<0) {
             close(r);
             return (errno=ENOMEM, -1);
         }
-        bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i);
+        bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &bevt_relay_conns, i);
         BOZTREE_INIT(&p->t, bevt_central_storage_t);
         {
             char *d = malloc(BEVT_MAX_DATA_SIZE);
@@ -173,7 +173,7 @@ int main (int argc, char const *const *argv) {
             strerr_diefu1sys(111, "trap signals") ;
     }
 
-    GENSETB_init(bevt_central_conn_t, &relay_conns, BEVT_CENTRAL_MAX_CONNS);
+    GENSETB_init(bevt_central_conn_t, &bevt_relay_conns, BEVT_CENTRAL_MAX_CONNS);
 
     mfd = main_socket_open();
     if (mfd < 0) strerr_diefu1sys(111, "open_main_socket") ;
@@ -182,7 +182,7 @@ int main (int argc, char const *const *argv) {
     tain_addsec_g(&deadline, 2) ;
 
     for (;;) {
-        register unsigned int n = gensetb_n(&relay_conns) ;
+        register unsigned int n = gensetb_n(&bevt_relay_conns) ;
         iopause_fd x[2 + n] ;
         register int r ;
         unsigned int i=0;
@@ -192,7 +192,7 @@ int main (int argc, char const *const *argv) {
         x[1].fd = mfd ; x[1].events = IOPAUSE_READ ;
 
         for(; i<n; i++) {
-            bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i);
+            bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &bevt_relay_conns, i);
             p->xindex = 2+i;
             x[2+i].fd = bozmessage_receiver_fd(&p->in);
             x[2+i].events = IOPAUSE_READ;
@@ -211,13 +211,13 @@ int main (int argc, char const *const *argv) {
         if (x[1].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) handle_accept(mfd) ;
 
         for (i=0 ; i<n; i++) {
-            register bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &relay_conns, i) ;
+            register bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &bevt_relay_conns, i) ;
             if (x[p->xindex].revents & IOPAUSE_READ) {
                 register int rr = bozmessage_handle(&p->in, bevt_central_parse_prot_cmd, p) ;
                 if (!rr) continue ;
                 if (rr < 0) {
                     handle_close(p) ;
-                    gensetb_delete(&relay_conns, i);
+                    gensetb_delete(&bevt_relay_conns, i);
                 }
             }
         }

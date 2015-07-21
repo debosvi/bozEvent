@@ -42,83 +42,158 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //*****************************************************************************
 //*****************************************************************************
 static int manage_register(const bevt_client_id_t id, boztree_t *t) {
-    int ret = 0;
-    bevt_central_storage_t* data = boztree_data(t, id);
-    if(!data) {
+    unsigned int i=0;
+    bevt_central_storage_t* data = 0;
+    bevt_central_storage_t* tdata = 0;
+
+    for(;i<gensetb_n(&bevt_relay_conns); i++) {
+        BEVT_DEBUG_LOG_INFO("%s: loop tree id(%d)", __PRETTY_FUNCTION__, i);
+        bevt_central_conn_t *c = gensetb_p(bevt_central_conn_t, &bevt_relay_conns, i);
+        boztree_t *taux = &c->t;
+        BEVT_DEBUG_LOG_INFO("%s: loop tree (%p)", __PRETTY_FUNCTION__, taux);
+        data = boztree_data(taux, id);
+
+        if(!data) continue;
+
+        BEVT_DEBUG_LOG_INFO("%s: rs(%02x)", __PRETTY_FUNCTION__, data->rs);
+        if(data->rs & BEVT_CENTRAL_STORAGE_REG_FLAG) {
+            return EALREADY;
+        }
+
+        if(taux==t)
+            tdata=data;
+
+    }
+
+    if(!tdata) {
+        BEVT_DEBUG_LOG_INFO("%s: create new leaf (%lld)", __PRETTY_FUNCTION__, (long long int)id);
         bevt_central_storage_t e = BEVT_CENTRAL_STORAGE_ID_INIT(id);
         e.rs |= BEVT_CENTRAL_STORAGE_REG_FLAG;
         boztree_insert(t, (boztree_id_t*)&e);            
     }
     else {
-        if(data->rs & BEVT_CENTRAL_STORAGE_REG_FLAG)
-            ret = EALREADY;
-        else data->rs |= BEVT_CENTRAL_STORAGE_REG_FLAG; 
-    
-        BEVT_DEBUG_LOG_INFO("%s: rs(%02x)", __PRETTY_FUNCTION__, data->rs);
+        BEVT_DEBUG_LOG_INFO("%s: update leaf (%lld)", __PRETTY_FUNCTION__, (long long int)id);
+        tdata->rs |= BEVT_CENTRAL_STORAGE_REG_FLAG; 
     }
 
-    return ret;
+    return 0;
 }
 
 //*****************************************************************************
 //*****************************************************************************
 static int manage_unregister(const bevt_client_id_t id, boztree_t *t) {
-    int ret = 0;
-    bevt_central_storage_t* data = boztree_data(t, id);
-    if(!data) {
-        bevt_central_storage_t e = BEVT_CENTRAL_STORAGE_ID_INIT(id);
-        boztree_insert(t, (boztree_id_t*)&e);            
-    }
-    else {
-        if(!(data->rs & BEVT_CENTRAL_STORAGE_REG_FLAG))
-            ret = EALREADY;
-        else data->rs ^= BEVT_CENTRAL_STORAGE_REG_FLAG;
+    unsigned int i=0;
+    bevt_central_storage_t* data = 0;
+    bevt_central_storage_t* tdata = 0;
+
+    for(;i<gensetb_n(&bevt_relay_conns); i++) {
+        BEVT_DEBUG_LOG_INFO("%s: loop tree id(%d)", __PRETTY_FUNCTION__, i);
+        bevt_central_conn_t *c = gensetb_p(bevt_central_conn_t, &bevt_relay_conns, i);
+        boztree_t *taux = &c->t;
+        BEVT_DEBUG_LOG_INFO("%s: loop tree (%p)", __PRETTY_FUNCTION__, taux);
+        data = boztree_data(taux, id);
+
+        if(!data) continue;
 
         BEVT_DEBUG_LOG_INFO("%s: rs(%02x)", __PRETTY_FUNCTION__, data->rs);
+        if(!(data->rs & BEVT_CENTRAL_STORAGE_REG_FLAG)) {
+            return EALREADY;
+        }
+
+        if(taux==t)
+            tdata=data;
+
     }
 
-    return ret;
+
+    if(!tdata) {
+        return ENOENT;
+    }
+    else {
+        BEVT_DEBUG_LOG_INFO("%s: update leaf (%lld)", __PRETTY_FUNCTION__, (long long int)id);
+        tdata->rs ^= BEVT_CENTRAL_STORAGE_REG_FLAG; 
+    }
+
+    return 0;
 }
 
 //*****************************************************************************
 //*****************************************************************************
 static int manage_subscribe(const bevt_client_id_t id, boztree_t *t) {
-    int ret = 0;
-    bevt_central_storage_t* data = boztree_data(t, id);
-    if(!data) {
+    unsigned int i=0;
+    bevt_central_storage_t* data = 0;
+    bevt_central_storage_t* tdata = 0;
+
+    for(;i<gensetb_n(&bevt_relay_conns); i++) {
+        BEVT_DEBUG_LOG_INFO("%s: loop tree id(%d)", __PRETTY_FUNCTION__, i);
+        bevt_central_conn_t *c = gensetb_p(bevt_central_conn_t, &bevt_relay_conns, i);
+        boztree_t *taux = &c->t;
+        BEVT_DEBUG_LOG_INFO("%s: loop tree (%p)", __PRETTY_FUNCTION__, taux);
+        data = boztree_data(taux, id);
+
+        if(!data) continue;
+
+        BEVT_DEBUG_LOG_INFO("%s: rs(%02x)", __PRETTY_FUNCTION__, data->rs);
+        if(data->rs & BEVT_CENTRAL_STORAGE_SUB_FLAG) {
+            return EALREADY;
+        }
+
+        if(taux==t)
+            tdata=data;
+
+    }
+
+
+    if(!tdata) {
+        BEVT_DEBUG_LOG_INFO("%s: create new leaf (%lld)", __PRETTY_FUNCTION__, (long long int)id);
         bevt_central_storage_t e = BEVT_CENTRAL_STORAGE_ID_INIT(id);
         e.rs |= BEVT_CENTRAL_STORAGE_SUB_FLAG;
         boztree_insert(t, (boztree_id_t*)&e);            
     }
     else {
-        if(data->rs & BEVT_CENTRAL_STORAGE_SUB_FLAG)
-            ret = EALREADY;
-        else data->rs |= BEVT_CENTRAL_STORAGE_SUB_FLAG; 
-
-        BEVT_DEBUG_LOG_INFO("%s: rs(%02x)", __PRETTY_FUNCTION__, data->rs);
+        BEVT_DEBUG_LOG_INFO("%s: update leaf (%lld)", __PRETTY_FUNCTION__, (long long int)id);
+        tdata->rs |= BEVT_CENTRAL_STORAGE_SUB_FLAG; 
     }
 
-    return ret;
+    return 0;
 }
 
 //*****************************************************************************
 //*****************************************************************************
 static int manage_unsubscribe(const bevt_client_id_t id, boztree_t *t) {
-    int ret = 0;
-    bevt_central_storage_t* data = boztree_data(t, id);
-    if(!data) {
-        bevt_central_storage_t e = BEVT_CENTRAL_STORAGE_ID_INIT(id);
-        boztree_insert(t, (boztree_id_t*)&e);            
-    }
-    else {
-        if(!(data->rs & BEVT_CENTRAL_STORAGE_SUB_FLAG))
-            ret = EALREADY;
-        else data->rs ^= BEVT_CENTRAL_STORAGE_SUB_FLAG;
-    
+    unsigned int i=0;
+    bevt_central_storage_t* data = 0;
+    bevt_central_storage_t* tdata = 0;
+
+    for(;i<gensetb_n(&bevt_relay_conns); i++) {
+        BEVT_DEBUG_LOG_INFO("%s: loop tree id(%d)", __PRETTY_FUNCTION__, i);
+        bevt_central_conn_t *c = gensetb_p(bevt_central_conn_t, &bevt_relay_conns, i);
+        boztree_t *taux = &c->t;
+        BEVT_DEBUG_LOG_INFO("%s: loop tree (%p)", __PRETTY_FUNCTION__, taux);
+        data = boztree_data(taux, id);
+
+        if(!data) continue;
+
         BEVT_DEBUG_LOG_INFO("%s: rs(%02x)", __PRETTY_FUNCTION__, data->rs);
+        if(!(data->rs & BEVT_CENTRAL_STORAGE_SUB_FLAG)) {
+            return EALREADY;
+        }
+
+        if(taux==t)
+            tdata=data;
+
     }
 
-    return ret;
+
+    if(!tdata) {
+        return ENOENT;
+    }
+    else {
+        BEVT_DEBUG_LOG_INFO("%s: update leaf (%lld)", __PRETTY_FUNCTION__, (long long int)id);
+        tdata->rs ^= BEVT_CENTRAL_STORAGE_SUB_FLAG; 
+    }
+
+    return 0;
 }
 
 //*****************************************************************************
