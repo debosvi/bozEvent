@@ -38,7 +38,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "bevt_relay_p.h"
 
 static int bevt_relay_db_set_elem_new(bevt_relay_db_elem_t const * const elem) {
-    const char* sql_tmpl = "INSERT INTO credentials (id,register,subscribe,notify,priority) VALUES (%llu,%d,%d,%llu,%d);";
+    const char* sql_tmpl = "INSERT INTO credentials (id,register,subscribe,notify,reg_prio,sub_prio) VALUES (%llu,%d,%d,%llu,%d,%d);";
     int r;
     int len = UINT64_FMT+1+1+UINT64_FMT+1+strlen(sql_tmpl);
     char sql_req[len];
@@ -47,7 +47,8 @@ static int bevt_relay_db_set_elem_new(bevt_relay_db_elem_t const * const elem) {
         (elem->reg ? 1 : 0), 
         (elem->sub ? 1 : 0), 
         (long long unsigned int)elem->nt, 
-        elem->prio 
+        elem->rprio,
+        elem->sprio 
         );    
     r = sqlite3_exec(bevt_relayd_db_g, sql_req, 0, 0, 0);
     if(r!=SQLITE_OK)
@@ -88,8 +89,24 @@ static int bevt_relay_db_set_elem_upd_sub(const bevt_client_id_t id, const unsig
     return (errno=0,0);
 }
     
-static int bevt_relay_db_set_elem_upd_prio(const bevt_client_id_t id, const unsigned char prio) {
-    const char* sql_tmpl = "UPDATE credentials SET priority = %d WHERE id == %llu;";
+static int bevt_relay_db_set_elem_upd_rprio(const bevt_client_id_t id, const unsigned char prio) {
+    const char* sql_tmpl = "UPDATE credentials SET reg_prio = %d WHERE id == %llu;";
+    int r;
+    int len = 1+UINT64_FMT+strlen(sql_tmpl);
+    char sql_req[len];
+    snprintf(sql_req, len, sql_tmpl, 
+        prio, 
+        (long long unsigned int)id 
+        );    
+    r = sqlite3_exec(bevt_relayd_db_g, sql_req, 0, 0, 0);
+    if(r!=SQLITE_OK)
+        return -1;
+
+    return (errno=0,0);
+}
+    
+static int bevt_relay_db_set_elem_upd_sprio(const bevt_client_id_t id, const unsigned char prio) {
+    const char* sql_tmpl = "UPDATE credentials SET sub_prio = %d WHERE id == %llu;";
     int r;
     int len = 1+UINT64_FMT+strlen(sql_tmpl);
     char sql_req[len];
@@ -139,7 +156,8 @@ int bevt_relay_db_set_elem(bevt_relay_db_elem_t const * const elem) {
             if(telem.reg != elem->reg) return bevt_relay_db_set_elem_upd_reg(elem->id, elem->reg);
             if(telem.sub != elem->sub) return bevt_relay_db_set_elem_upd_sub(elem->id, elem->sub);
             if(telem.nt < elem->nt) return bevt_relay_db_set_elem_upd_nt(elem->id, elem->nt);
-            if(telem.prio != elem->prio) return bevt_relay_db_set_elem_upd_prio(elem->id, elem->prio);
+            if(telem.rprio != elem->rprio) return bevt_relay_db_set_elem_upd_rprio(elem->id, elem->rprio);
+            if(telem.sprio != elem->sprio) return bevt_relay_db_set_elem_upd_sprio(elem->id, elem->sprio);
             break;
         }
     }

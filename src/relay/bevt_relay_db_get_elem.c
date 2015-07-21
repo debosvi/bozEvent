@@ -53,8 +53,10 @@ static int bevt_relay_db_elem_cb(void *data, int argc, char **argv, char **azCol
             elem->reg = ((*argv[i]=='0') ? 0 : 1);
         else if(!strncmp("subscribe", azColName[i], 9))
             elem->sub = ((*argv[i]=='0') ? 0 : 1);
-        else if(!strncmp("prio", azColName[i], 4))
-            elem->prio = *argv[i];
+        else if(!strncmp("reg_prio", azColName[i], 4))
+            elem->rprio = *argv[i];
+        else if(!strncmp("sub_prio", azColName[i], 4))
+            elem->sprio = *argv[i];
         else {
             BEVT_DEBUG_LOG_ERROR("%s: unknown column(%s), value(%s)", __PRETTY_FUNCTION__, azColName[i], argv[i]);
         }

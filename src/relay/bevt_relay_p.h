@@ -88,7 +88,8 @@ typedef struct {
     uint64_t        nt;
     unsigned char   reg;
     unsigned char   sub;
-    unsigned char   prio;
+    unsigned char   rprio;
+    unsigned char   sprio;
 } bevt_relay_db_elem_t;
 
 extern int bevt_relay_db_get_elem(const bevt_client_id_t, bevt_relay_db_elem_t* const);

@@ -3,7 +3,8 @@ CREATE TABLE `credentials` (
     `register`  INTEGER,
     `subscribe` INTEGER,
     `notify`    INTEGER,
-    `priority`  INTEGER
+    `reg_prio`  INTEGER,
+    `sub_prio`  INTEGER
 );
 
 CREATE TABLE `cred_log` (
@@ -15,20 +16,20 @@ CREATE TABLE `cred_log` (
 
 CREATE TRIGGER update_sub_log UPDATE OF subscribe ON credentials  WHEN new.subscribe!=0
 BEGIN
-    INSERT INTO cred_log VALUES (old.id, datetime(strftime('%s','now'), 'unixepoch'), "subscribe", new.priority);
+    INSERT INTO cred_log VALUES (old.id, datetime(strftime('%s','now'), 'unixepoch'), "subscribe", new.sub_prio);
 END;
 
 CREATE TRIGGER update_unsub_log UPDATE OF subscribe ON credentials  WHEN new.subscribe==0
 BEGIN
-    INSERT INTO cred_log VALUES (old.id, datetime(strftime('%s','now'), 'unixepoch'), "unsubscribe", new.priority);
+    INSERT INTO cred_log VALUES (old.id, datetime(strftime('%s','now'), 'unixepoch'), "unsubscribe", new.sub_prio);
 END;
 
 CREATE TRIGGER update_reg_log UPDATE OF register ON credentials WHEN new.register!=0
 BEGIN
-    INSERT INTO cred_log VALUES (old.id, datetime(strftime('%s','now'), 'unixepoch'), "register", new.priority);
+    INSERT INTO cred_log VALUES (old.id, datetime(strftime('%s','now'), 'unixepoch'), "register", new.reg_prio);
 END;
 
 CREATE TRIGGER update_unreg_log UPDATE OF register ON credentials WHEN new.register==0
 BEGIN
-    INSERT INTO cred_log VALUES (old.id, datetime(strftime('%s','now'), 'unixepoch'), "unregister", new.priority);
+    INSERT INTO cred_log VALUES (old.id, datetime(strftime('%s','now'), 'unixepoch'), "unregister", new.reg_prio);
 END;

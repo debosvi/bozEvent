@@ -102,7 +102,7 @@ static int manage_register(const bevt_client_id_t id, const bevt_client_prio_t p
                 memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
             elem.id = id;
             elem.reg = 1;
-            elem.prio = prio;
+            elem.rprio = prio;
             bevt_relay_db_set_elem(&elem);
             answer(0);
         }
@@ -125,15 +125,15 @@ static int manage_register_update(const bevt_client_id_t id, const bevt_client_p
 
     BEVT_DEBUG_LOG_INFO("%s: id(%llu), prio(%u)", __PRETTY_FUNCTION__, (long long int)id, prio);
     r = bevt_relay_db_get_elem(id, &elem);
-    if(!r && elem.reg && (elem.prio!=prio)) {
+    if(!r && elem.reg && (elem.rprio!=prio)) {
         BEVT_DEBUG_LOG_INFO("register update todo");
-        elem.prio = prio;
+        elem.rprio = prio;
         bevt_relay_db_set_elem(&elem);
         answer(0);
     }
     else {
         BEVT_DEBUG_LOG_INFO("register update impossible/not relevant");
-        answer(elem.prio==prio ? EALREADY : ENOENT);
+        answer(elem.rprio==prio ? EALREADY : ENOENT);
     }
     return 0; 
 }
@@ -154,7 +154,7 @@ static int manage_subscribe(const bevt_client_id_t id, const bevt_client_prio_t 
                 memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
             elem.id = id;
             elem.sub = 1;
-            elem.prio = prio;
+            elem.sprio = prio;
             bevt_relay_db_set_elem(&elem);
             answer(0);
         }
@@ -178,15 +178,15 @@ static int manage_subscribe_update(const bevt_client_id_t id, const bevt_client_
 
     BEVT_DEBUG_LOG_INFO("%s: id(%llu), prio(%u)", __PRETTY_FUNCTION__, (long long int)id, prio);
     r = bevt_relay_db_get_elem(id, &elem);
-    if(!r && elem.sub && (elem.prio!=prio)) {
+    if(!r && elem.sub && (elem.sprio!=prio)) {
         BEVT_DEBUG_LOG_INFO("subscribe update todo");
-        elem.prio = prio;
+        elem.sprio = prio;
         bevt_relay_db_set_elem(&elem);
         answer(0);
     }
     else {
         BEVT_DEBUG_LOG_INFO("subscribe update impossible/not relevant");
-        answer(elem.prio==prio ? EALREADY : ENOENT);
+        answer(elem.sprio==prio ? EALREADY : ENOENT);
     }
     return 0; 
 }
@@ -256,7 +256,7 @@ int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context) {
     (void)context;
 
     BEVT_DEBUG_LOG_INFO("message received, len(%d)", m->len);
-    for(r=0; r<m->len; r++)
+    for(r=0; r<(int)m->len; r++)
         BEVT_DEBUG_LOG_INFO("%02x ", m->s[r]);
 
     if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_REGISTER_FIRST], BEVT_RELAY_COMMAND_OP_LEN)) {

@@ -28,7 +28,8 @@ int main(void) {
             fprintf(stderr, "\tregister(%d)\n", elem.reg);
             fprintf(stderr, "\tsubscribe(%d)\n", elem.sub);
             fprintf(stderr, "\tnotify(%llu)\n", (long long unsigned int)elem.nt);
-            fprintf(stderr, "\tpriority(%c)\n", elem.prio);
+            fprintf(stderr, "\treg priority(%c)\n", elem.rprio);
+            fprintf(stderr, "\tsub priority(%c)\n", elem.sprio);
         }
 
         ret=bevt_relay_db_check_reg(i);
