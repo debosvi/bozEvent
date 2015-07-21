@@ -57,7 +57,7 @@ int bevt_client_unregister(const bevt_client_id_t id) {
             { .s = (char*)bevt_relay_commands[BEVT_RELAY_OP_UNREGISTER], .len = BEVT_RELAY_COMMAND_OP_LEN }, 
             { .s = &fmt_id[0], .len = 8} 
         } ;
-        uint64_pack(&fmt_id[0], id);
+        uint64_pack_big(&fmt_id[0], id);
         tain_now_g();
         tain_addsec_g(&deadline, 1);
         r = skaclient_sendv (&bevt_client_g.connection, &v[0], 2, &skaclient_default_cb, &err, &deadline, &STAMP);    

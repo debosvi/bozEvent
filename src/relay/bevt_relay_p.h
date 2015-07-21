@@ -48,6 +48,7 @@ extern "C"
 #include <errno.h>
 #include <sqlite3.h>
 
+#include <skalibs/uint16.h>
 #include <skalibs/unixmessage.h>
 
 #include <bozCore/bozclient.h>

@@ -22,7 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 /*!
- * \file        bevt_client_register.c
+ * \file        bevt_client_subscribe_update.c
  * \brief       Message creation implementation.
  * \version     0.1
  * \date        2013/01/14
@@ -41,7 +41,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 //*****************************************************************************
 //*****************************************************************************
-int bevt_client_register(const bevt_client_id_t id, const bevt_client_prio_t prio) {
+int bevt_client_subscribe_update(const bevt_client_id_t id, const bevt_client_prio_t prio) {
     int r;
 
     if( !id ||
@@ -58,9 +58,9 @@ int bevt_client_register(const bevt_client_id_t id, const bevt_client_prio_t pri
         char fmt_id[8];
         char fmt_prio[2];
         siovec_t v[3] = { 
-            { .s = (char*)bevt_relay_commands[BEVT_RELAY_OP_REGISTER_FIRST], .len = BEVT_RELAY_COMMAND_OP_LEN }, 
-            { .s = &fmt_id[0], .len = 8 },
-            { .s = &fmt_prio[0], .len = 2 } 
+            { .s = (char*)bevt_relay_commands[BEVT_RELAY_OP_SUBSCRIBE_UPDATE], .len = BEVT_RELAY_COMMAND_OP_LEN }, 
+            { .s = &fmt_id[0], .len = 8},
+            { .s = &fmt_prio[0], .len = 1} 
         };
         uint64_pack_big(&fmt_id[0], id);
         uint16_pack_big(&fmt_prio[0], prio);

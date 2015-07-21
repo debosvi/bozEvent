@@ -56,13 +56,14 @@ int bevt_client_subscribe(const bevt_client_id_t id, const bevt_client_prio_t pr
         char err;
         tain_t deadline;
         char fmt_id[8];
-        char fmt_prio;
+        char fmt_prio[2];
         siovec_t v[3] = { 
             { .s = (char*)bevt_relay_commands[BEVT_RELAY_OP_SUBSCRIBE_FIRST], .len = BEVT_RELAY_COMMAND_OP_LEN }, 
-            { .s = &fmt_id[0], .len = 8},
-            { .s = &fmt_prio, .len = 1} 
+            { .s = &fmt_id[0], .len = 8 },
+            { .s = &fmt_prio[0], .len = 2} 
         };
-        uint64_pack(&fmt_id[0], id);
+        uint64_pack_big(&fmt_id[0], id);
+        uint16_pack_big(&fmt_prio[0], prio);
         tain_now_g();
         tain_addsec_g(&deadline, 1);
         r = skaclient_sendv (&bevt_client_g.connection, &v[0], 2, &skaclient_default_cb, &err, &deadline, &STAMP);    

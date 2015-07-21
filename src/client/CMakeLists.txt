@@ -9,7 +9,9 @@ set(SOURCES
     bevt_client_parse_prot_cmd.c
     bevt_client_parse_prot_event.c
     bevt_client_register.c
+    bevt_client_register_update.c
     bevt_client_subscribe.c
+    bevt_client_subscribe_update.c
     bevt_client_unregister.c
     bevt_client_unsubscribe.c
     )

@@ -88,10 +88,11 @@ static int send_to_central(const bevt_client_id_t id, const bevt_relay_op_t op) 
 
 //*****************************************************************************
 //*****************************************************************************
-static int manage_register(const bevt_client_id_t id) {
+static int manage_register(const bevt_client_id_t id, const bevt_client_prio_t prio) {
     int r;
     bevt_relay_db_elem_t elem;
 
+    BEVT_DEBUG_LOG_INFO("%s: id(%llu), prio(%u)", __PRETTY_FUNCTION__, (long long int)id, prio);
     r = bevt_relay_db_check_reg(id);
     if(!r) {
         BEVT_DEBUG_LOG_INFO("register todo");
@@ -101,6 +102,7 @@ static int manage_register(const bevt_client_id_t id) {
                 memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
             elem.id = id;
             elem.reg = 1;
+            elem.prio = prio;
             bevt_relay_db_set_elem(&elem);
             answer(0);
         }
@@ -117,10 +119,32 @@ static int manage_register(const bevt_client_id_t id) {
 
 //*****************************************************************************
 //*****************************************************************************
-static int manage_subscribe(const bevt_client_id_t id) {
+static int manage_register_update(const bevt_client_id_t id, const bevt_client_prio_t prio) {
     int r;
     bevt_relay_db_elem_t elem;
 
+    BEVT_DEBUG_LOG_INFO("%s: id(%llu), prio(%u)", __PRETTY_FUNCTION__, (long long int)id, prio);
+    r = bevt_relay_db_get_elem(id, &elem);
+    if(!r && elem.reg && (elem.prio!=prio)) {
+        BEVT_DEBUG_LOG_INFO("register update todo");
+        elem.prio = prio;
+        bevt_relay_db_set_elem(&elem);
+        answer(0);
+    }
+    else {
+        BEVT_DEBUG_LOG_INFO("register update impossible/not relevant");
+        answer(elem.prio==prio ? EALREADY : ENOENT);
+    }
+    return 0; 
+}
+
+//*****************************************************************************
+//*****************************************************************************
+static int manage_subscribe(const bevt_client_id_t id, const bevt_client_prio_t prio) {
+    int r;
+    bevt_relay_db_elem_t elem;
+
+    BEVT_DEBUG_LOG_INFO("%s: id(%llu), prio(%u)", __PRETTY_FUNCTION__, (long long int)id, prio);
     r = bevt_relay_db_check_sub(id);
     if(!r) {
         BEVT_DEBUG_LOG_INFO("subscribe todo");
@@ -130,6 +154,7 @@ static int manage_subscribe(const bevt_client_id_t id) {
                 memset(&elem, 0, sizeof(bevt_relay_db_elem_t));
             elem.id = id;
             elem.sub = 1;
+            elem.prio = prio;
             bevt_relay_db_set_elem(&elem);
             answer(0);
         }
@@ -142,6 +167,27 @@ static int manage_subscribe(const bevt_client_id_t id) {
         answer(EALREADY);
     }
 
+    return 0; 
+}
+
+//*****************************************************************************
+//*****************************************************************************
+static int manage_subscribe_update(const bevt_client_id_t id, const bevt_client_prio_t prio) {
+    int r;
+    bevt_relay_db_elem_t elem;
+
+    BEVT_DEBUG_LOG_INFO("%s: id(%llu), prio(%u)", __PRETTY_FUNCTION__, (long long int)id, prio);
+    r = bevt_relay_db_get_elem(id, &elem);
+    if(!r && elem.sub && (elem.prio!=prio)) {
+        BEVT_DEBUG_LOG_INFO("subscribe update todo");
+        elem.prio = prio;
+        bevt_relay_db_set_elem(&elem);
+        answer(0);
+    }
+    else {
+        BEVT_DEBUG_LOG_INFO("subscribe update impossible/not relevant");
+        answer(elem.prio==prio ? EALREADY : ENOENT);
+    }
     return 0; 
 }
 
@@ -206,26 +252,44 @@ static int manage_unsubscribe(const bevt_client_id_t id) {
 int bevt_relay_parse_prot_cmd(unixmessage_t const *m, void *context) {
     int r;
     bevt_client_id_t id;
+    bevt_client_prio_t prio = 0;
     (void)context;
 
     BEVT_DEBUG_LOG_INFO("message received, len(%d)", m->len);
+    for(r=0; r<m->len; r++)
+        BEVT_DEBUG_LOG_INFO("%02x ", m->s[r]);
+
     if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_REGISTER_FIRST], BEVT_RELAY_COMMAND_OP_LEN)) {
-        uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
-        BEVT_DEBUG_LOG_INFO("register command, id(%llu)", (long long unsigned int)id);
-        r = manage_register(id);
+        uint64_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        uint16_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN+8, (uint16*)&prio);
+        BEVT_DEBUG_LOG_INFO("register (first) command, id(%llu), prio(%04x)", (long long unsigned int)id, prio);
+        r = manage_register(id, prio);
+    }
+    else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_REGISTER_UPDATE], BEVT_RELAY_COMMAND_OP_LEN)) {
+        uint64_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        uint16_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN+8, (uint16*)&prio);
+        BEVT_DEBUG_LOG_INFO("register (update) command, id(%llu), prio(%04x)", (long long unsigned int)id, prio);
+        r = manage_register_update(id, prio);
     }
     else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_SUBSCRIBE_FIRST], BEVT_RELAY_COMMAND_OP_LEN)) {
-        uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
-        BEVT_DEBUG_LOG_INFO("subscribe command, id(%llu)", (long long unsigned int)id);
-        r = manage_subscribe(id);
+        uint64_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        uint16_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN+8, (uint16*)&prio);
+        BEVT_DEBUG_LOG_INFO("subscribe (first) command, id(%llu), prio(%u)", (long long unsigned int)id, prio);
+        r = manage_subscribe(id, prio);
+    }
+    else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_SUBSCRIBE_UPDATE], BEVT_RELAY_COMMAND_OP_LEN)) {
+        uint64_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        uint16_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN+8, (uint16*)&prio);
+        BEVT_DEBUG_LOG_INFO("subscribe (update) command, id(%llu), prio(%u)", (long long unsigned int)id, prio);
+        r = manage_subscribe_update(id, prio);
     }
     else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_UNREGISTER], BEVT_RELAY_COMMAND_OP_LEN)) {
-        uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        uint64_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("unregister command, id(%llu)", (long long unsigned int)id);
         r = manage_unregister(id);
     }
     else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_UNSUBSCRIBE], BEVT_RELAY_COMMAND_OP_LEN)) {
-        uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        uint64_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("unsubscribe command, id(%llu)", (long long unsigned int)id);
         r = manage_unsubscribe(id);
     }
