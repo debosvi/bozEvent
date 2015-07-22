@@ -134,7 +134,7 @@ int main (int argc, char const *const *argv) {
 
     for (;;) {
         register unsigned int n = 0 ;
-        iopause_fd x[5 + n] ;
+        iopause_fd x[6 + n] ;
         int r ;
 
         if(mfd<0) handle_connect_central();
@@ -145,6 +145,7 @@ int main (int argc, char const *const *argv) {
         x[2].fd = sfd ; x[2].events = IOPAUSE_READ ;
         x[3].fd = bozclient_sfd(&central_client_g); x[3].events = IOPAUSE_READ ;
         x[4].fd = bozclient_sfd(&central_client_g); x[4].events = (bozclient_siswritable(&central_client_g) ? IOPAUSE_WRITE : 0) ;
+        x[5].fd = unixmessage_sender_fd(unixmessage_sender_x) ; x[5].events = (unixmessage_sender_isempty(unixmessage_sender_x) ? 0 : IOPAUSE_WRITE)  ;
 
         r = iopause_g(x, 5 + n, &deadline) ;
         if (r < 0) {
@@ -155,11 +156,19 @@ int main (int argc, char const *const *argv) {
         /* client closed */
         if ((x[0].revents | x[1].revents) & IOPAUSE_EXCEPT) break ;
 
-        /* client is reading */
+        /* client is sync reading */
         if (x[1].revents & IOPAUSE_WRITE) {
             if (!unixmessage_sender_flush(unixmessage_sender_1) && !error_isagain(errno)) {
                 cleanup() ;
-                strerr_diefu1sys(111, "flush stdout") ;
+                strerr_diefu1sys(111, "flush sync out") ;
+            }
+        }
+
+        /* client is async rzading */
+        if (x[5].revents & IOPAUSE_WRITE) {
+            if (!unixmessage_sender_flush(unixmessage_sender_x) && !error_isagain(errno)) {
+                cleanup() ;
+                strerr_diefu1sys(111, "flush async out") ;
             }
         }
 
@@ -177,7 +186,15 @@ int main (int argc, char const *const *argv) {
             bozclient_flush(&central_client_g);
         }
 
-        /* client is writing */
+        /* main socket close */
+        if (x[5].revents & IOPAUSE_WRITE) {
+            if (!unixmessage_sender_flush(unixmessage_sender_x) && !error_isagain(errno)) {
+                cleanup() ;
+                strerr_diefu1sys(111, "flush stdout") ;
+            }
+        }
+
+        /* client is sync writing */
         if (!unixmessage_receiver_isempty(unixmessage_receiver_0) || x[0].revents & IOPAUSE_READ)
         {
             if (unixmessage_handle(unixmessage_receiver_0, &bevt_relay_parse_prot_cmd, 0) < 0)
@@ -187,7 +204,6 @@ int main (int argc, char const *const *argv) {
                 strerr_diefu1sys(111, "handle messages from client") ;
             }
         }
-
     }
     cleanup() ;
     return 0 ;

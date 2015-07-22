@@ -66,10 +66,22 @@ static void do_unsubscribe(const bevt_client_id_t id) {
 
 //******************************************************************************
 //******************************************************************************
+static void do_notify(const bevt_client_id_t id, const unsigned int len) {
+    char buf[len];
+    int ret = bevt_client_notify(id, buf, len);
+    if(ret<0)
+        fprintf(stderr, "bevt_client_notify failed 1, (long long int)id(%lld), errno(%d/%s)\n", (long long int)id, errno, strerror(errno));
+    else
+        fprintf(stderr, "bevt_client_notify success, (long long int)id(%lld)\n", (long long int)id);
+}
+
+//******************************************************************************
+//******************************************************************************
 int main(int argc, char const *const *argv) {
     int ret=0;
     int action=-1;
     int update=0;
+    int size=0;
     bevt_client_id_t id=0xFFFFFFFF;
 
     ret=bevt_client_init();
@@ -80,7 +92,7 @@ int main(int argc, char const *const *argv) {
         subgetopt_t l = SUBGETOPT_ZERO ;
         for (;;)
         {
-            register int opt = subgetopt_r(argc, argv, "ur:v:s:w:p", &l) ;
+            register int opt = subgetopt_r(argc, argv, "ur:v:s:w:pd:", &l) ;
             if (opt == -1) break ;
             switch (opt)
             {
@@ -90,6 +102,7 @@ int main(int argc, char const *const *argv) {
                 case 's' : action=2; id=atoi(l.arg); break ;
                 case 'w' : action=3; id=atoi(l.arg); break ;
                 case 'p' : action=4; break ;
+                case 'd' : action=5; size=atoi(l.arg); break ;
                 default : strerr_dieusage(100, USAGE) ;
             }
 
@@ -99,13 +112,13 @@ int main(int argc, char const *const *argv) {
             case 2: do_subscribe(id, update); break;
             case 3: do_unsubscribe(id); break;
             case 4: getchar(); break;
+            case 5: do_notify(id, size); break;
             default:
                 fprintf(stderr, "parsed action failed(%d)\n", action);
             }
 
-            update=0; 
+            update=size=0; 
             action=-1;
-            id=0xFFFFFFFF;
 
         }
         argc -= l.ind ; argv += l.ind ;

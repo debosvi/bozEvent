@@ -150,12 +150,22 @@ int bevt_client_subscribe_update(const bevt_client_id_t, const bevt_client_prio_
 /**
  * @brief Unsubscribe from a specific event identifier.
  * @param[in]   id event identifier.
- * @param[in]   event priority management.
  * @return      error code.
  * @retval      0 in case of success.
  * @retval      -1 in case of failure, errno set accordingly.
  */ 
 int bevt_client_unsubscribe(const bevt_client_id_t);
+
+/**
+ * @brief Notify to a specific event identifier.
+ * @param[in]   id event identifier.
+ * @param[in]   data buffer reference
+ * @param[in]   len buffer length
+ * @return      error code.
+ * @retval      0 in case of success.
+ * @retval      -1 in case of failure, errno set accordingly.
+ */ 
+int bevt_client_notify(const bevt_client_id_t, const char const *data, const unsigned int len);
 
 /**
  *\}

@@ -198,32 +198,50 @@ static int manage_unsubscribe(const bevt_client_id_t id, boztree_t *t) {
 
 //*****************************************************************************
 //*****************************************************************************
+static int manage_notify(const bevt_client_id_t id, boztree_t *t, const char const *buf, const unsigned int len) {
+    bevt_central_storage_t* data = boztree_data(t, id);
+
+    if(!data) return ENOENT;
+
+    BEVT_DEBUG_LOG_INFO("%s: notify id(%lld), len(%u)", __PRETTY_FUNCTION__, (long long int)id, len);
+    return 0;
+}
+
+//*****************************************************************************
+//*****************************************************************************
 int bevt_central_parse_prot_cmd(bozmessage_t const *m, void *p) {
     char ret = 0;
+    unsigned int len=0;
     bevt_client_id_t id;
     bevt_central_conn_t* c = (bevt_central_conn_t*)p;
 
     BEVT_DEBUG_LOG_INFO("message received, len(%d)", m->len);
 
     if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_REGISTER_FIRST], BEVT_RELAY_COMMAND_OP_LEN)) {
-        uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        uint64_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("register command, id(%llu)", (long long unsigned int)id);
         ret = manage_register(id, &c->t);
     }
     else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_UNREGISTER], BEVT_RELAY_COMMAND_OP_LEN)) {
-        uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        uint64_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("unregister command, id(%llu)", (long long unsigned int)id);
         ret = manage_unregister(id, &c->t);
     }
     else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_SUBSCRIBE_FIRST], BEVT_RELAY_COMMAND_OP_LEN)) {
-        uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        uint64_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("subscribe command, id(%llu)", (long long unsigned int)id);
         ret = manage_subscribe(id, &c->t);
     }
     else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_UNSUBSCRIBE], BEVT_RELAY_COMMAND_OP_LEN)) {
-        uint64_unpack(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        uint64_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
         BEVT_DEBUG_LOG_INFO("unsubscribe command, id(%llu)", (long long unsigned int)id);
         ret = manage_unsubscribe(id, &c->t);
+    }
+    else if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_NOTIFY], BEVT_RELAY_COMMAND_OP_LEN)) {
+        uint64_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        uint32_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN+8, &len);
+        BEVT_DEBUG_LOG_INFO("unsubscribe command, id(%llu)", (long long unsigned int)id);
+        ret = manage_notify(id, &c->t, m->s+BEVT_RELAY_COMMAND_OP_LEN+8+4, len);
     }
     else {
         BEVT_DEBUG_LOG_INFO("unknown command");

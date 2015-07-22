@@ -5,6 +5,7 @@ set(SOURCES
     bevt_client_p.c
     bevt_client_init.c
     bevt_client_finalise.c
+    bevt_client_notify.c
     bevt_client_process.c
     bevt_client_parse_prot_cmd.c
     bevt_client_parse_prot_event.c

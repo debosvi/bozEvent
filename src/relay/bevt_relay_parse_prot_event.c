@@ -39,9 +39,43 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "bevt_relay_p.h"
 
+//*****************************************************************************
+//*****************************************************************************
+static void async_answer(char c) {
+    unixmessage_t am = { .s = &c, .len = 1, .fds = 0, .nfds = 0 } ;
+    if (!unixmessage_put(unixmessage_sender_x, &am)) {
+        BEVT_DEBUG_LOG_ERROR("%s: unable to put ack", __PRETTY_FUNCTION__);
+    }
+    else if (!unixmessage_sender_flush(unixmessage_sender_x)) {
+        BEVT_DEBUG_LOG_ERROR("%s: unable to send ack", __PRETTY_FUNCTION__);
+    }
+    else {
+        BEVT_DEBUG_LOG_INFO("%s: ack sent", __PRETTY_FUNCTION__);
+    }
+}
+
+//*****************************************************************************
+//*****************************************************************************
 int bevt_relay_parse_prot_event(unixmessage_t const *m, void *context) {
-    (void)m;
+    int r;
+    bevt_client_id_t id;
+    uint32 lg = 0;
     (void)context;
-    BEVT_DEBUG_LOG_INFO("message received, len(%d)", m->len);
+
+    BEVT_DEBUG_LOG_INFO("%s: message received, len(%d)", m->len);
+    for(r=0; r<(int)m->len; r++)
+        BEVT_DEBUG_LOG_INFO("%s: %02x ", m->s[r]);
+
+    if(!strncmp(m->s, bevt_relay_commands[BEVT_RELAY_OP_NOTIFY], BEVT_RELAY_COMMAND_OP_LEN)) {
+        uint64_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN, &id);
+        uint32_unpack_big(m->s+BEVT_RELAY_COMMAND_OP_LEN+8, &lg);
+        BEVT_DEBUG_LOG_INFO("%s: notify command, id(%llu), lg(%u)", __PRETTY_FUNCTION__, (long long unsigned int)id, lg);
+    }
+    else {
+        BEVT_DEBUG_LOG_INFO("%s: unknown command", __PRETTY_FUNCTION__);
+        async_answer(ECANCELED);
+    }
+
+    if(!r) errno=0;
     return 1;
 }
