@@ -200,6 +200,8 @@ static int manage_unsubscribe(const bevt_client_id_t id, boztree_t *t) {
 //*****************************************************************************
 static int manage_notify(const bevt_client_id_t id, boztree_t *t, const char const *buf, const unsigned int len) {
     bevt_central_storage_t* data = boztree_data(t, id);
+    (void)buf;
+    (void)len;
 
     if(!data) return ENOENT;
 

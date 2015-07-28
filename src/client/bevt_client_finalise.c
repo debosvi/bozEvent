@@ -38,6 +38,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "bevt_client_p.h"
 
 int bevt_client_finalise(void) {
+    skaclient_end(&bevt_client_g.connection);
 
     return (errno=0,0);
 }
