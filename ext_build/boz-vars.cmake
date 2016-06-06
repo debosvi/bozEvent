@@ -1,27 +1,22 @@
 
-macro(SET_AND_DEFINE var value)
-    set(${var} ${value})
-    add_definitions(-D${var}="${value}")
-endmacro()
-
 set(USR_DIR /usr/share/boz)
 if(NOT "${BOZ_WIDE_GLOBAL_PATH}" STREQUAL "")
 	set(USR_DIR ${BOZ_WIDE_GLOBAL_PATH})
 endif()
 message(STATUS "Global install path: " ${USR_DIR})
 
-SET_AND_DEFINE(BINARY_INSTALL_DIR ${USR_DIR}/bin)
-SET_AND_DEFINE(LIBRARY_INSTALL_DIR ${USR_DIR}/lib)
-SET_AND_DEFINE(HEADER_INSTALL_DIR ${USR_DIR}/include)
-SET_AND_DEFINE(LOG_INSTALL_DIR ${USR_DIR}/log)
-SET_AND_DEFINE(BOZ_WEB_ROOT_DIR ${USR_DIR}/www)
-SET_AND_DEFINE(CONFIG_INSTALL_DIR ${USR_DIR}/configs)
-SET_AND_DEFINE(SCRIPT_INSTALL_DIR ${USR_DIR}/scripts)
-SET_AND_DEFINE(SERVICES_INSTALL_DIR ${USR_DIR}/s6-services)
-SET_AND_DEFINE(SERVICE_READY_DIR /tmp/s6-services)
-SET_AND_DEFINE(SERVICE_SCAN_DIR /tmp/s6-service)
-SET_AND_DEFINE(SERVICES_LOG_INSTALL_DIR ${LOG_INSTALL_DIR}/s6-services)
 
+set(BINARY_INSTALL_DIR ${USR_DIR}/bin)
+set(LIBRARY_INSTALL_DIR ${USR_DIR}/lib)
+set(HEADER_INSTALL_DIR ${USR_DIR}/include)
+set(LOG_INSTALL_DIR ${USR_DIR}/log)
+set(BOZ_WEB_ROOT_DIR ${USR_DIR}/www)
+set(CONFIG_INSTALL_DIR ${USR_DIR}/configs)
+set(SCRIPT_INSTALL_DIR ${USR_DIR}/scripts)
+set(SERVICES_INSTALL_DIR ${USR_DIR}/s6-services)
+set(SERVICE_READY_DIR /tmp/s6-services)
+set(SERVICE_SCAN_DIR /tmp/s6-service)
+set(SERVICES_LOG_INSTALL_DIR ${LOG_INSTALL_DIR}/s6-services)
 set(BOZ_CONFIG_DIR ${CMAKE_BINARY_DIR}/config)
 set(LOAD_CONFIG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/config)
 
@@ -51,8 +46,12 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
     add_definitions(-D__DEBUG__)
 endif()
 
-add_definitions(-std=c99)
-add_definitions(-Wall  -Wextra)
+set(CMAKE_EXE_LINKER_FLAGS "-Wl,--allow-multiple-definition")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}-std=c99")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+add_definitions(-Wall -Wextra)
 
 set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb")
 set(CMAKE_C_FLAGS_RELEASE "-O2 -Werror")

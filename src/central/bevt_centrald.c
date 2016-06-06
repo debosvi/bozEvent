@@ -1,239 +1,229 @@
 /*
-The MIT License (MIT)
-
-Copyright (c) 2013 Vincent de RIBOU <belzo2005-dolphin@yahoo.fr>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
-/*!
- * \file        bevt_centrald.c
- * \brief       BozEvent relay client executable.
- * \version     0.1.0
- * \date        2013/01/14
- * \author      Vincent de RIBOU.
- * \copyright   Aquaplouf Land.
+ * The MIT License (MIT)
+ * Copyright (c) 2011 Jason Ish
  *
- * \brief Implements client relay to central node.
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy,
+ * modify, merge, publish, distribute, sublicense, and/or sell copies
+ * of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
  */
 
-#include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
+/*
+ * A simple chat server using libevent.
+ *
+ * @todo Check API usage with libevent2 proper API usage.
+ * @todo IPv6 support - using libevent socket helpers, if any.
+ */
 
-#include <skalibs/sgetopt.h>
-#include <skalibs/strerr2.h>
-#include <skalibs/sig.h>
-#include <skalibs/selfpipe.h>
-#include <skalibs/tai.h>
-#include <skalibs/djbunix.h>
-#include <skalibs/iopause.h>
-#include <skalibs/skamisc.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+/* Required by event.h. */
+#include <sys/time.h>
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <err.h>
+
+
+/* Libevent. */
+#include <event2/event.h>
+#include <event2/event_struct.h>
+#include <event2/bufferevent.h>
+#include <event2/buffer.h>
 
 #include "bevt_central_p.h"
 
-#define USAGE "bevt_centrald"
-#define X() strerr_dief1x(101, "internal inconsistency, please submit a bug-report.")
+/* The libevent event base.  In libevent 1 you didn't need to worry
+ * about this for simple programs, but its used more in the libevent 2
+ * API. */
+static struct event_base *evbase;
 
-static int mfd=-1;
-bevt_central_rconns_t bevt_relay_conns;
 
-static int handle_close(bevt_central_conn_t *p) {
-    boztree_free(&p->t);
-    fd_close(bozmessage_receiver_fd(&p->in));
-    //same fd as receiver: fd_close(bozmessage_sender_fd(&p->out));
-    //same fd as receiver: fd_close(bozmessage_sender_fd(&p->asyncout));
-    free(p->d);
-    bozmessage_receiver_free(&p->in);  
-    bozmessage_sender_free(&p->out);  
-    bozmessage_sender_free(&p->asyncout);  
-    return (errno=0, 0);
+static struct client g_clients[MAX_CLIENTS];
+static unsigned int nb_clients = 0;
+static struct event ev_accept;
+
+/**
+ * Set a socket to non-blocking mode.
+ */
+int setnonblock(int fd) {
+	int flags;
+
+	flags = fcntl(fd, F_GETFL);
+	if (flags < 0)
+		return flags;
+	flags |= O_NONBLOCK;
+	if (fcntl(fd, F_SETFL, flags) < 0)
+		return -1;
+
+	return 0;
 }
 
-static void cleanup (void) {
-    register int i=0, n=gensetb_n(&bevt_relay_conns);
+/**
+ * Called by libevent when there is data to read.
+ */
+void buffered_on_read(struct bufferevent *bev, void *arg) {
+	struct client *this_client = arg;
+	struct client *client;
+	uint8_t data[8192];
+	size_t n;
+    unsigned int i=0;
+ 
+	/* Read 8k at a time and send it to all connected clients. */
+	for (;;) {
+		n = bufferevent_read(bev, data, sizeof(data));
+		if (n <= 0) {
+			/* Done. */
+			break;
+		}
+		
+		/* Send data to all connected clients except for the
+		 * client that sent the data. */
+		for(; i<nb_clients; i++) {
+            client = &g_clients[i];
+			if (client != this_client) {
+				bufferevent_write(client->buf_ev, data,  n);
+			}
+		}
+	}
+
+}
+
+/**
+ * Called by libevent when there is an error on the underlying socket
+ * descriptor.
+ */
+void buffered_on_error(struct bufferevent *bev, short what, void *arg) {
+	struct client *this_client = (struct client *)arg;
+	struct client *client;
+    unsigned int i=0;
     
-    for(; i<n; i++) {
-        bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &bevt_relay_conns, i);
-        handle_close(p);
+    (void)bev;
+    
+	if (what & BEV_EVENT_EOF) {
+		/* Client disconnected, remove the read event and the
+		 * free the client structure. */
+		printf("Client disconnected.\n");
+	}
+	else {
+		warn("Client socket error, disconnecting.\n");
+	}
+
+	/* Remove the client from the tailq. */
+    for(; i<nb_clients; i++) {
+        client = &g_clients[i];
+        if (client == this_client) {
+            break;
+        }
     }
 
-    main_socket_close(mfd);
-    stralloc_free(&satmp);
-}
-
-static int handle_accept(const int fd) {
-    int r = main_socket_accept(fd);
-    if(r<0) strerr_warnwu1x("unable to accept new connection");
-    else {
-        register int i = gensetb_new(&bevt_relay_conns);
-        if(i<0) {
-            close(r);
-            return (errno=ENOMEM, -1);
-        }
-        bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &bevt_relay_conns, i);
-        BOZTREE_INIT(&p->t, bevt_central_storage_t);
-        {
-            char *d = malloc(BEVT_MAX_DATA_SIZE);
-            p->d = d;
-            bozmessage_receiver_init(&p->in, r, d, BEVT_MAX_DATA_SIZE);  
-        }
-        bozmessage_sender_init(&p->out, r);  
-        bozmessage_sender_init(&p->asyncout, r);  
-        {
-            tain_t deadline;
-            tain_now_g();
-            tain_addsec_g(&deadline, 1);
-            bozclient_server_init (&p->in, &p->out, &p->asyncout, 
-                    BEVT_CENTRAL_BANNER1, BEVT_CENTRAL_BANNER1_LEN,
-                    BEVT_CENTRAL_BANNER2, BEVT_CENTRAL_BANNER2_LEN,
-                    &deadline, &STAMP);
-        }
-    }
-    return r;
-}
-
-static void handle_signals (void) {
-    for (;;) {
-        switch (selfpipe_read()) {
-            case -1 : cleanup() ; strerr_diefu1sys(111, "selfpipe_read") ;
-            case 0 : return ;
-            case SIGTERM :
-            case SIGQUIT :
-            case SIGHUP :
-            case SIGABRT :
-            case SIGINT : cleanup() ; _exit(0) ;
-            case SIGCHLD : wait_reap() ; break ;
-            default : cleanup() ; X() ;
-        }
+	if(i<nb_clients) {
+        bufferevent_free(client->buf_ev);
+        close(client->fd);
+        g_clients[nb_clients] = (*client);
+        nb_clients--;
     }
 }
 
-int main (int argc, char const *const *argv) {
-    tain_t deadline ;
-    int sfd, no_df = 0 ;
-    pid_t child;
-    PROG = "bevt_centrald" ;
+/**
+ * This function will be called by libevent when there is a connection
+ * ready to be accepted.
+ */
+void on_accept(int fd, short ev, void *arg) {
+	int client_fd;
+	struct sockaddr_in client_addr;
+	socklen_t client_len = sizeof(client_addr);
+	struct client *client;
+    
+    (void)ev;
+    (void)arg;
+    
+	client_fd = accept(fd, (struct sockaddr *)&client_addr, &client_len);
+	if (client_fd < 0) {
+		warn("accept failed");
+		return;
+	}
 
-    if (argc < 1) strerr_dieusage(100, USAGE) ;
-    if (ndelay_on(0) < 0) strerr_diefu2sys(111, "ndelay_on ", "0") ;
-    if (ndelay_on(1) < 0) strerr_diefu2sys(111, "ndelay_on ", "1") ;
-    if (sig_ignore(SIGPIPE) < 0) strerr_diefu1sys(111, "ignore SIGPIPE") ;
+	/* Set the client socket to non-blocking mode. */
+	if (setnonblock(client_fd) < 0)
+		warn("failed to set client socket non-blocking");
 
+	/* We've accepted a new client, create a client object. */
+	client = &g_clients[nb_clients++];
+    
+	client->fd = client_fd;
+	client->buf_ev = bufferevent_socket_new(evbase, client_fd, 0);
+	bufferevent_setcb(client->buf_ev, buffered_on_read, NULL, buffered_on_error, client);
 
-    {
-        subgetopt_t l = SUBGETOPT_ZERO ;
-        for (;;)
-        {
-            register int opt = subgetopt_r(argc, argv, "n", &l) ;
-            if (opt == -1) break ;
-            switch (opt)
-            {
-                case 'n' : no_df = 1; break ;
-                default : strerr_dieusage(100, USAGE) ;
-            }
-        }
-        argc -= l.ind ; argv += l.ind ;
-    }
+	/* We have to enable it before our callbacks will be
+	 * called. */
+	bufferevent_enable(client->buf_ev, EV_READ);
 
-    if(!no_df) {
-        child = doublefork();
-        if (child < 0) strerr_diefu1sys(111, "doublefork") ;
-        else if (child) strerr_die1(0, "success: ", "doublefork") ; 
-    }
-
-    sfd = selfpipe_init() ;
-    if (sfd < 0) strerr_diefu1sys(111, "selfpipe_init") ;
-    {
-        sigset_t set ;
-        sigemptyset(&set) ;
-        sigaddset(&set, SIGCHLD) ;
-        sigaddset(&set, SIGTERM) ;
-        sigaddset(&set, SIGQUIT) ;
-        sigaddset(&set, SIGHUP) ;
-        sigaddset(&set, SIGABRT) ;
-        sigaddset(&set, SIGINT) ;
-        if (selfpipe_trapset(&set) < 0)
-            strerr_diefu1sys(111, "trap signals") ;
-    }
-
-    GENSETB_init(bevt_central_conn_t, &bevt_relay_conns, BEVT_CENTRAL_MAX_CONNS);
-
-    mfd = main_socket_open();
-    if (mfd < 0) strerr_diefu1sys(111, "open_main_socket") ;
-
-    tain_now_g() ;
-    tain_addsec_g(&deadline, 2) ;
-
-    for (;;) {
-        register unsigned int n = gensetb_n(&bevt_relay_conns) ;
-        iopause_fd x[2 + n] ;
-        register int r ;
-        unsigned int i=0;
-
-        tain_add_g(&deadline, &tain_infinite_relative) ;
-        x[0].fd = sfd ; x[0].events = IOPAUSE_READ ;
-        x[1].fd = mfd ; x[1].events = IOPAUSE_READ ;
-
-        for(; i<n; i++) {
-            bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &bevt_relay_conns, i);
-            p->xindex = 2+i;
-            x[2+i].fd = bozmessage_receiver_fd(&p->in);
-            x[2+i].events = IOPAUSE_READ;
-        }
-
-        r = iopause_g(x, 2 + n, &deadline) ;
-        if (r < 0) {
-            cleanup() ;
-            strerr_diefu1sys(111, "iopause") ;
-        }
-
-        /* signals arrived */
-        if (x[0].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) handle_signals() ;
-
-        /* main socket arrived */
-        if (x[1].revents & (IOPAUSE_READ | IOPAUSE_EXCEPT)) handle_accept(mfd) ;
-
-        for (i=0 ; i<n; i++) {
-            register bevt_central_conn_t *p = gensetb_p(bevt_central_conn_t, &bevt_relay_conns, i) ;
-            if (x[p->xindex].revents & IOPAUSE_READ) {
-                register int rr = bozmessage_handle(&p->in, bevt_central_parse_prot_cmd, p) ;
-                if (!rr) continue ;
-                if (rr < 0) {
-                    handle_close(p) ;
-                    gensetb_delete(&bevt_relay_conns, i);
-                }
-            }
-        }
-//        /* client is writing */
-//        if (!unixmessage_receiver_isempty(unixmessage_receiver_0) || x[0].revents & IOPAUSE_READ)
-//        {
-//            if (unixmessage_handle(unixmessage_receiver_0, &bevt_central_parse_prot_cmd, 0) < 0)
-//            {
-//                if (errno == EPIPE) break ; /* normal exit */
-//                cleanup() ;
-//                strerr_diefu1sys(111, "handle messages from client") ;
-//            }
-//        }
-
-    }
-    cleanup() ;
-    return 0 ;
+	printf("Accepted connection from %s\n", inet_ntoa(client_addr.sin_addr));
 }
 
+int main(int argc, char **argv) {
+	int listen_fd;
+	struct sockaddr_in listen_addr;
+	int reuseaddr_on;
+
+    (void)argc;
+    (void)argv;
+    
+	/* Initialize libevent. */
+    evbase = event_base_new();
+
+	/* Create our listening socket. */
+	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (listen_fd < 0)
+		err(1, "listen failed");
+	memset(&listen_addr, 0, sizeof(listen_addr));
+	listen_addr.sin_family = AF_INET;
+	listen_addr.sin_addr.s_addr = INADDR_ANY;
+	listen_addr.sin_port = htons(SERVER_PORT);
+	if (bind(listen_fd, (struct sockaddr *)&listen_addr,
+		sizeof(listen_addr)) < 0)
+		err(1, "bind failed");
+	if (listen(listen_fd, 5) < 0)
+		err(1, "listen failed");
+	reuseaddr_on = 1;
+	setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuseaddr_on, 
+	    sizeof(reuseaddr_on));
+
+	/* Set the socket to non-blocking, this is essential in event
+	 * based programming with libevent. */
+	if (setnonblock(listen_fd) < 0)
+		err(1, "failed to set server socket to non-blocking");
+
+	/* We now have a listening socket, we create a read event to
+	 * be notified when a client connects. */
+    event_assign(&ev_accept, evbase, listen_fd, EV_READ|EV_PERSIST, on_accept, NULL);
+	event_add(&ev_accept, NULL);
+
+	/* Start the event loop. */
+	event_base_dispatch(evbase);
+
+	return 0;
+}

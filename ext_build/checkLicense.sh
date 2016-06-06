@@ -14,11 +14,9 @@ if [ ! -f ${REF} ];then
     exit 0
 fi
 
-ORIGINAL=/tmp/$(basename ${REF})
-echo -e "/*" > ${ORIGINAL}
-cat ${REF}  >> ${ORIGINAL}
-#cat ${REF}  > ${ORIGINAL}
-echo -e "*/" >> ${ORIGINAL}
+echo -e "/*" > /tmp/${REF}
+cat ${REF}  >> /tmp/${REF}
+echo -e "*/" >> /tmp/${REF}
 
 shift;
 
@@ -37,10 +35,10 @@ function check_license {
     fi
         
     echo -e "Test file: ${file}"; 
-    NBLINE=`cat ${ORIGINAL} | wc -l`
+    NBLINE=`cat /tmp/${REF} | wc -l`
     head -n ${NBLINE} ${file} > ${TMPFILE}
 
-    diff -q ${ORIGINAL} ${TMPFILE}
+    diff -q /tmp/${REF} ${TMPFILE}
     RESULT=$?
 
     if [ ${RESULT} -eq 1 ]; then

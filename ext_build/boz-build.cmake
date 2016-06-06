@@ -1,5 +1,6 @@
+
 set(DEFAULT_INSTALL_DIR ${CMAKE_BINARY_DIR}/.built)
-set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${DEFAULT_INSTALL_DIR}/lib)
+set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${DEFAULT_INSTALL_DIR}/lib/static)
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${DEFAULT_INSTALL_DIR}/lib)
 #     set(LINK_FLAGS -Xlinker -rpath-link -Xlinker ${DEFAULT_INSTALL_DIR}/lib )
 set (EXECUTABLE_OUTPUT_PATH ${DEFAULT_INSTALL_DIR}/bin)
@@ -8,15 +9,32 @@ include_directories (${DEFAULT_INSTALL_DIR}/include)
 link_directories (${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
 set(CMAKE_INCLUDE_DIRECTORIES_PROJECT_BEFORE ON) 
+
 include(${CMAKE_CURRENT_LIST_DIR}/boz-vars.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/boz-install.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/boz-incgen.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/boz-doc.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/boz-test-macros.cmake)
 
+include(CMakeParseArguments)
+
+set(LIBRARY_TARGET_PREFIX "lib_")
+set(APPLICATION_TARGET_PREFIX "app_")
+set(TEST_TARGET_PREFIX "test_")
+
+add_custom_target(distclean)
+
+add_custom_target(libs)
+add_custom_target(apps)
+add_custom_target(tests)
+add_custom_target(evtrpcs)
+
+include(${CMAKE_CURRENT_LIST_DIR}/generate_libs.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/generate_apps.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/generate_tests.cmake)
+
 include_directories (${HEADER_INSTALL_DIR})
 link_directories (${LIBRARY_INSTALL_DIR})
-link_directories (${LIBRARY_INSTALL_DIR}/static)
 
 macro(add_s6service svc_name svc_proc_name)
   message(STATUS "No process to supervise with project component ${svc_name}")

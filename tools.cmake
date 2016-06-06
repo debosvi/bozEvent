@@ -5,3 +5,6 @@
 #message(STATUS "Skarnet found: " ${SKARNET_VERSION_STRING})
 #include_directories(${SKARNET_INCLUDE_DIRS})
 #link_directories(${SKARNET_LIBRARY_DIRS})
+
+include_directories($ENV{HOME}/usr/include)
+link_directories($ENV{HOME}/usr/lib)
